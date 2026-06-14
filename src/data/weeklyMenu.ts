@@ -23,71 +23,76 @@ const meal = (
   }),
 });
 
-/* Plantillas reutilizables para que el menú sea variado pero coherente */
-const desayunos = [
-  meal('Desayuno', '08:00', 480, 35, 50, 14, [
-    'Avena|60 g', 'Leche desnatada|250 ml', 'Plátano|1 ud', 'Proteína whey|1 scoop', 'Crema de cacahuete|10 g',
-  ]),
-  meal('Desayuno', '08:00', 460, 34, 40, 16, [
-    'Tortilla 3 huevos|—', 'Pan integral|60 g', 'Aguacate|1/2 ud', 'Tomate|—',
-  ]),
-  meal('Desayuno', '08:00', 470, 38, 45, 13, [
-    'Yogur griego|200 g', 'Granola|40 g', 'Arándanos|80 g', 'Miel|10 g', 'Nueces|15 g',
-  ]),
-];
+/*
+  Menú DE DEFINICIÓN (déficit), ~1.900-2.000 kcal y alto en proteína.
+  Pocos ingredientes que se repiten → lista de la compra corta y fácil de
+  cocinar en tandas (batch cooking). Solo 2 desayunos, 2 comidas, 1 merienda
+  y 2 cenas que van rotando.
+*/
 
-const comidas = [
-  meal('Comida', '14:00', 720, 55, 70, 22, [
-    'Pechuga de pollo|180 g', 'Arroz blanco|80 g (seco)', 'Verduras salteadas|—', 'Aceite de oliva|10 ml',
-  ]),
-  meal('Comida', '14:00', 740, 52, 65, 26, [
-    'Salmón|180 g', 'Patata cocida|250 g', 'Ensalada|—', 'Aceite de oliva|10 ml',
-  ]),
-  meal('Comida', '14:00', 700, 58, 72, 18, [
-    'Ternera magra|170 g', 'Pasta integral|80 g (seca)', 'Tomate y cebolla|—', 'Aceite de oliva|8 ml',
-  ]),
-  meal('Comida', '14:00', 690, 50, 75, 20, [
-    'Lentejas|90 g (secas)', 'Arroz|40 g', 'Huevo|1 ud', 'Verduras|—', 'Aceite de oliva|10 ml',
-  ]),
-];
+// --- DESAYUNOS ---
+const desA = meal('Desayuno', '08:00', 470, 38, 58, 11, [
+  'Avena | 70 g',
+  'Leche desnatada | 250 ml',
+  'Plátano | 1 ud',
+  'Proteína en polvo | 1 scoop',
+]);
+const desB = meal('Desayuno', '08:00', 450, 30, 24, 26, [
+  'Huevos | 3-4 ud',
+  'Pan integral | 50 g',
+  'Aguacate | 1/2 ud',
+  'Tomate | —',
+]);
 
-const meriendas = [
-  meal('Merienda', '17:30', 280, 28, 22, 8, [
-    'Yogur griego|200 g', 'Frutos rojos|100 g', 'Proteína|1/2 scoop',
-  ]),
-  meal('Merienda', '17:30', 290, 22, 30, 9, [
-    'Tostada integral|2 ud', 'Pavo|80 g', 'Queso fresco|40 g',
-  ]),
-  meal('Merienda', '17:30', 270, 18, 28, 10, [
-    'Manzana|1 ud', 'Almendras|25 g', 'Yogur natural|125 g',
-  ]),
-];
+// --- COMIDAS (cocinar en tandas) ---
+const comPollo = meal('Comida', '14:00', 610, 55, 66, 14, [
+  'Pollo a la plancha | 200 g',
+  'Arroz | 80 g (en seco)',
+  'Verdura (menestra) | —',
+  'Aceite de oliva | 8 ml',
+]);
+const comTernera = meal('Comida', '14:00', 600, 50, 55, 22, [
+  'Ternera picada magra | 180 g',
+  'Patata | 300 g',
+  'Ensalada | —',
+  'Aceite de oliva | 8 ml',
+]);
 
-const cenas = [
-  meal('Cena', '21:00', 560, 48, 35, 24, [
-    'Merluza al horno|200 g', 'Boniato|200 g', 'Espárragos|—', 'Aceite de oliva|10 ml',
-  ]),
-  meal('Cena', '21:00', 540, 45, 30, 26, [
-    'Tortilla 4 huevos|—', 'Champiñones|—', 'Pan integral|40 g', 'Aguacate|1/2 ud',
-  ]),
-  meal('Cena', '21:00', 580, 50, 38, 22, [
-    'Pollo a la plancha|180 g', 'Quinoa|70 g (seca)', 'Ensalada variada|—', 'Aceite de oliva|8 ml',
-  ]),
-  meal('Cena', '21:00', 520, 46, 28, 23, [
-    'Tofu / tempeh|200 g', 'Verduras al wok|—', 'Arroz|40 g', 'Sésamo y aceite|—',
-  ]),
-];
+// --- MERIENDA ---
+const merienda = meal('Merienda', '17:30', 290, 24, 26, 11, [
+  'Yogur griego natural | 200 g',
+  'Manzana | 1 ud',
+  'Nueces | 20 g',
+]);
+const meriendaB = meal('Merienda', '17:30', 270, 26, 24, 7, [
+  'Pan integral | 50 g',
+  'Pavo / atún | 90 g',
+  'Tomate | —',
+]);
+
+// --- CENAS ---
+const cenaPescado = meal('Cena', '21:00', 500, 46, 40, 15, [
+  'Pescado blanco / salmón | 200 g',
+  'Boniato | 200 g',
+  'Ensalada | —',
+  'Aceite de oliva | 8 ml',
+]);
+const cenaTortilla = meal('Cena', '21:00', 490, 30, 26, 28, [
+  'Huevos | 3 ud',
+  'Verdura salteada | —',
+  'Pan integral | 40 g',
+  'Aguacate | 1/2 ud',
+]);
 
 function buildDay(weekday: number): DayMenu {
-  const i = weekday - 1;
+  const i = weekday - 1; // 0..6
+  const des = i % 5 === 4 ? desB : desA; // viernes cambia
+  const com = i % 2 === 0 ? comPollo : comTernera;
+  const mer = i === 2 ? meriendaB : merienda;
+  const cen = i % 2 === 0 ? cenaPescado : cenaTortilla;
   return {
     weekday,
-    meals: [
-      desayunos[i % desayunos.length],
-      comidas[i % comidas.length],
-      meriendas[i % meriendas.length],
-      cenas[i % cenas.length],
-    ].map((m) => ({ ...m, id: `${m.id}-${weekday}` })),
+    meals: [des, com, mer, cen].map((m) => ({ ...m, id: `${m.id}-${weekday}` })),
   };
 }
 

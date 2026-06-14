@@ -1,21 +1,28 @@
 import { useState } from 'react';
-import { Flame, Pencil, Target, ChevronRight, Clock } from 'lucide-react';
+import { Flame, Pencil, Target, ChevronRight, Clock, Calculator } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Card, Segmented, SectionTitle } from '../components/ui';
 import { ProgressRing } from '../components/ProgressRing';
 import { Sheet } from '../components/Sheet';
-import { useMenu, useSettings } from '../lib/store';
+import { useMenu, useSettings, useHealth } from '../lib/store';
 import { menuTotals } from '../data/weeklyMenu';
+import { computeTargets, type CalcResult } from '../lib/nutrition';
 import { weekdayOf, WEEKDAYS, WEEKDAYS_LONG } from '../lib/date';
-import type { Meal } from '../types';
+import type { Meal, Profile } from '../types';
 
 export function Nutrition() {
-  const { macros, setMacros } = useSettings();
+  const { macros, setMacros, profile, setProfile } = useSettings();
   const { menu, updateMeal } = useMenu();
+  const healthEntries = useHealth((s) => s.entries);
   const [view, setView] = useState<'dia' | 'semana'>('dia');
   const [selDay, setSelDay] = useState(weekdayOf());
   const [editTargets, setEditTargets] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
   const [editMeal, setEditMeal] = useState<{ weekday: number; meal: Meal } | null>(null);
+
+  const latestWeight = Object.values(healthEntries)
+    .filter((e) => e.weight != null)
+    .sort((a, b) => (a.date < b.date ? 1 : -1))[0]?.weight;
 
   const dayMenu = menu.find((m) => m.weekday === selDay)!;
   const totals = menuTotals(dayMenu);
@@ -32,12 +39,20 @@ export function Nutrition() {
               <Target size={18} className="text-food" />
               <h3 className="font-bold">Mis objetivos</h3>
             </div>
-            <button
-              onClick={() => setEditTargets(true)}
-              className="flex items-center gap-1.5 text-sm font-semibold text-food active:scale-95"
-            >
-              <Pencil size={15} /> Ajustar
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCalc(true)}
+                className="flex items-center gap-1.5 text-sm font-semibold text-health active:scale-95"
+              >
+                <Calculator size={15} /> Calcular
+              </button>
+              <button
+                onClick={() => setEditTargets(true)}
+                className="flex items-center gap-1.5 text-sm font-semibold text-food active:scale-95"
+              >
+                <Pencil size={15} /> Ajustar
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-ink-2 p-4">
@@ -205,6 +220,19 @@ export function Nutrition() {
         </div>
       </Sheet>
 
+      {/* Sheet calculadora */}
+      <CalcSheet
+        open={showCalc}
+        onClose={() => setShowCalc(false)}
+        profile={profile}
+        startWeight={latestWeight ?? 80}
+        onApply={(r, p) => {
+          setMacros({ calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat });
+          setProfile(p);
+          setShowCalc(false);
+        }}
+      />
+
       {/* Sheet editar comida */}
       {editMeal && (
         <MealEditor
@@ -217,6 +245,125 @@ export function Nutrition() {
           onClose={() => setEditMeal(null)}
         />
       )}
+    </div>
+  );
+}
+
+function CalcSheet({
+  open,
+  onClose,
+  profile,
+  startWeight,
+  onApply,
+}: {
+  open: boolean;
+  onClose: () => void;
+  profile: Profile;
+  startWeight: number;
+  onApply: (r: CalcResult, p: Partial<Profile>) => void;
+}) {
+  const [sex, setSex] = useState<'h' | 'm'>(profile.sex);
+  const [age, setAge] = useState(profile.age);
+  const [heightCm, setHeight] = useState(profile.heightCm);
+  const [weight, setWeight] = useState(startWeight);
+  const [activity, setActivity] = useState<Profile['activity']>(profile.activity);
+  const [adjustPct, setAdjust] = useState(-20);
+
+  const r = computeTargets({ sex, age, heightCm, weightKg: weight, activity, adjustPct });
+  const goal: Profile['goal'] = adjustPct < 0 ? 'perder' : adjustPct > 0 ? 'ganar' : 'mantener';
+
+  return (
+    <Sheet open={open} onClose={onClose} title="Calculadora de calorías">
+      <div className="space-y-4">
+        <p className="text-[13px] text-muted leading-relaxed -mt-1">
+          Mete tus datos y la app calcula tus calorías y macros. Fórmula Mifflin-St Jeor.
+        </p>
+
+        <Segmented
+          value={sex}
+          onChange={(v) => setSex(v)}
+          options={[
+            { label: 'Hombre', value: 'h' },
+            { label: 'Mujer', value: 'm' },
+          ]}
+        />
+
+        <div className="grid grid-cols-3 gap-2">
+          <Field small label="Edad" value={age} onChange={setAge} />
+          <Field small label="Altura cm" value={heightCm} onChange={setHeight} />
+          <Field small label="Peso kg" value={weight} onChange={setWeight} />
+        </div>
+
+        <div>
+          <label className="text-[12px] font-semibold text-muted">Nivel de actividad</label>
+          <div className="mt-1">
+            <Segmented
+              value={activity}
+              onChange={(v) => setActivity(v)}
+              options={[
+                { label: 'Sedent.', value: 'sedentario' },
+                { label: 'Ligero', value: 'ligero' },
+                { label: 'Moder.', value: 'moderado' },
+                { label: 'Alto', value: 'alto' },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[12px] font-semibold text-muted">Objetivo</label>
+          <div className="mt-1">
+            <Segmented
+              value={adjustPct}
+              onChange={(v) => setAdjust(v)}
+              options={[
+                { label: 'Perder grasa', value: -20 },
+                { label: 'Mantener', value: 0 },
+                { label: 'Ganar', value: 10 },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* Resultado */}
+        <div className="rounded-2xl bg-ink-2 border border-line p-4">
+          <div className="flex items-center justify-between text-[13px] text-muted">
+            <span>Gasto diario estimado (TDEE)</span>
+            <span className="font-semibold text-fg">{r.tdee} kcal</span>
+          </div>
+          <div className="mt-3 flex items-end justify-between">
+            <span className="text-[13px] text-muted">Tu objetivo</span>
+            <span className="text-3xl font-extrabold text-health">
+              {r.calories}
+              <span className="text-sm text-faint font-semibold"> kcal</span>
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <CalcMacro label="Proteína" value={r.protein} color="#7ee0c0" />
+            <CalcMacro label="Carbos" value={r.carbs} color="#ffb454" />
+            <CalcMacro label="Grasa" value={r.fat} color="#ff9fd0" />
+          </div>
+        </div>
+
+        <button
+          onClick={() => onApply(r, { sex, age, heightCm, activity, goal })}
+          className="w-full rounded-2xl bg-health text-ink py-3.5 font-bold"
+        >
+          Aplicar a mis objetivos
+        </button>
+      </div>
+    </Sheet>
+  );
+}
+
+function CalcMacro({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="rounded-xl bg-card p-3 text-center">
+      <p className="text-lg font-bold" style={{ color }}>
+        {value}
+        <span className="text-xs text-faint font-medium">g</span>
+      </p>
+      <p className="text-[11px] text-muted mt-0.5">{label}</p>
     </div>
   );
 }

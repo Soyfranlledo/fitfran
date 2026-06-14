@@ -4,6 +4,14 @@ export function dayForWeekday(plan: WorkoutPlan, weekday: number): WorkoutDay | 
   return plan.days.find((d) => d.weekday === weekday);
 }
 
+/** Devuelve el plan con los días reasignados por el usuario y ordenados por día de la semana. */
+export function effectivePlan(plan: WorkoutPlan, overrides: Record<string, number>): WorkoutPlan {
+  const days = plan.days
+    .map((d) => ({ ...d, weekday: overrides[d.id] ?? d.weekday }))
+    .sort((a, b) => a.weekday - b.weekday);
+  return { ...plan, days };
+}
+
 /** Duración estimada de una sesión en minutos (calentamiento + series + descansos). */
 export function estimatedMinutes(day: WorkoutDay): number {
   const WARMUP = 8 * 60;

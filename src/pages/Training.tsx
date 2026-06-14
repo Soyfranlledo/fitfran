@@ -1,22 +1,53 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronRight, Dumbbell, Clock, ListChecks } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Dumbbell,
+  Clock,
+  ListChecks,
+  Pencil,
+  GripVertical,
+  History,
+  RotateCcw,
+} from 'lucide-react';
 import { Header } from '../components/Header';
 import { Card, Segmented, SectionTitle } from '../components/ui';
-import { useSettings, useWorkout, sessionKey } from '../lib/store';
+import { useSettings, useWorkout, usePlan, sessionKey } from '../lib/store';
 import { getPlan } from '../data/workoutPlans';
-import { sessionProgress, muscleColor, estimatedMinutes } from '../lib/workout';
+import { sessionProgress, muscleColor, estimatedMinutes, effectivePlan } from '../lib/workout';
 import { isoDate, weekdayOf, WEEKDAYS } from '../lib/date';
 
 export function Training() {
   const { daysPerWeek, setDaysPerWeek } = useSettings();
   const sessions = useWorkout((s) => s.sessions);
-  const plan = getPlan(daysPerWeek);
+  const overrides = usePlan((s) => s.weekdayOverride);
+  const assignWeekday = usePlan((s) => s.assignWeekday);
+  const clearOverrides = usePlan((s) => s.clearOverrides);
+
+  const [edit, setEdit] = useState(false);
+  const plan = effectivePlan(getPlan(daysPerWeek), overrides);
   const today = isoDate();
   const wd = weekdayOf();
+  const effList = plan.days.map((d) => ({ id: d.id, weekday: d.weekday }));
 
   return (
     <div className="animate-fade">
-      <Header title="Entreno" subtitle={plan.title} />
+      <Header
+        title="Entreno"
+        subtitle={plan.title}
+        right={
+          <button
+            onClick={() => setEdit((e) => !e)}
+            className={`flex items-center gap-1.5 h-10 px-3 rounded-full text-sm font-semibold active:scale-95 ${
+              edit ? 'bg-accent text-ink' : 'bg-card border border-line text-fg'
+            }`}
+          >
+            {edit ? <Check size={16} /> : <Pencil size={15} />}
+            {edit ? 'Listo' : 'Editar'}
+          </button>
+        }
+      />
 
       <div className="px-4 space-y-5">
         <div>
@@ -49,14 +80,10 @@ export function Training() {
                   {WEEKDAYS[d - 1]}
                 </div>
                 <div className="mt-1.5 grid place-items-center">
-                  {day ? (
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: muscleColor[day.exercises[0].muscle] ?? '#b6f23e' }}
-                    />
-                  ) : (
-                    <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-                  )}
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: day ? muscleColor[day.exercises[0].muscle] ?? '#b6f23e' : 'var(--color-line-strong)' }}
+                  />
                 </div>
               </div>
             );
@@ -64,50 +91,100 @@ export function Training() {
         </div>
 
         <div>
-          <SectionTitle>Tus sesiones</SectionTitle>
+          <SectionTitle
+            action={
+              edit ? (
+                <button
+                  onClick={clearOverrides}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-muted active:text-fg"
+                >
+                  <RotateCcw size={13} /> Restablecer
+                </button>
+              ) : (
+                <Link to="/entreno/historial" className="flex items-center gap-1 text-[12px] font-semibold text-accent">
+                  <History size={13} /> Historial
+                </Link>
+              )
+            }
+          >
+            Tus sesiones
+          </SectionTitle>
+
+          {edit && (
+            <p className="text-[13px] text-muted px-1 mb-3 -mt-1">
+              Cambia el día de cada sesión. Si el día está ocupado, se intercambian.
+            </p>
+          )}
+
           <div className="space-y-3">
             {plan.days.map((day) => {
               const sess = sessions[sessionKey(today, day.id)];
               const prog = sessionProgress(sess);
               const done = prog.total > 0 && prog.pct >= 1;
               const muscles = [...new Set(day.exercises.map((e) => e.muscle))];
-              return (
-                <Link key={day.id} to={`/entreno/sesion/${day.id}`}>
-                  <Card className="p-4 flex items-center gap-4 active:scale-[0.99] transition-transform">
-                    <div
-                      className="grid place-items-center h-12 w-12 rounded-2xl shrink-0"
-                      style={{ backgroundColor: 'color-mix(in srgb, ' + (muscleColor[day.exercises[0].muscle] ?? '#b6f23e') + ' 16%, transparent)' }}
-                    >
-                      {done ? (
-                        <Check size={22} className="text-accent" />
-                      ) : (
-                        <Dumbbell size={22} style={{ color: muscleColor[day.exercises[0].muscle] ?? '#b6f23e' }} />
+              const color = muscleColor[day.exercises[0].muscle] ?? '#b6f23e';
+
+              const inner = (
+                <Card className={`p-4 flex items-center gap-4 ${!edit ? 'active:scale-[0.99] transition-transform' : ''}`}>
+                  <div
+                    className="grid place-items-center h-12 w-12 rounded-2xl shrink-0"
+                    style={{ backgroundColor: 'color-mix(in srgb, ' + color + ' 16%, transparent)' }}
+                  >
+                    {edit ? (
+                      <GripVertical size={22} style={{ color }} />
+                    ) : done ? (
+                      <Check size={22} className="text-accent" />
+                    ) : (
+                      <Dumbbell size={22} style={{ color }} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
+                        {WEEKDAYS[day.weekday - 1]}
+                      </span>
+                      {prog.done > 0 && !done && (
+                        <span className="text-[11px] font-semibold text-accent">
+                          {prog.done}/{prog.total}
+                        </span>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-faint">
-                          {WEEKDAYS[day.weekday - 1]}
-                        </span>
-                        {prog.done > 0 && !done && (
-                          <span className="text-[11px] font-semibold text-accent">
-                            {prog.done}/{prog.total}
+                    <h3 className="font-bold text-lg leading-tight truncate">{day.name}</h3>
+                    {edit ? (
+                      <select
+                        value={day.weekday}
+                        onChange={(e) => assignWeekday(effList, day.id, Number(e.target.value))}
+                        className="mt-2 w-full h-10 rounded-xl bg-ink-2 border border-line px-3 font-semibold text-fg outline-none focus:border-accent/60"
+                      >
+                        {WEEKDAYS.map((w, i) => (
+                          <option key={i} value={i + 1}>
+                            {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][i]}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <p className="text-[13px] text-muted truncate">{muscles.join(' · ')}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[12px] text-faint">
+                          <span className="flex items-center gap-1">
+                            <Clock size={13} /> ≈ {estimatedMinutes(day)} min
                           </span>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-lg leading-tight truncate">{day.name}</h3>
-                      <p className="text-[13px] text-muted truncate">{muscles.join(' · ')}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[12px] text-faint">
-                        <span className="flex items-center gap-1">
-                          <Clock size={13} /> ≈ {estimatedMinutes(day)} min
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <ListChecks size={13} /> {day.exercises.length} ejercicios
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight size={20} className="text-faint shrink-0" />
-                  </Card>
+                          <span className="flex items-center gap-1">
+                            <ListChecks size={13} /> {day.exercises.length} ejercicios
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {!edit && <ChevronRight size={20} className="text-faint shrink-0" />}
+                </Card>
+              );
+
+              return edit ? (
+                <div key={day.id}>{inner}</div>
+              ) : (
+                <Link key={day.id} to={`/entreno/sesion/${day.id}`}>
+                  {inner}
                 </Link>
               );
             })}

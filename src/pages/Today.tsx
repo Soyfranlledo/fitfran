@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui';
 import { ProgressRing } from '../components/ProgressRing';
-import { useHealth, useMenu, useSettings, useWorkout, sessionKey } from '../lib/store';
+import { useHealth, useMenu, useSettings, useWorkout, usePlan, sessionKey } from '../lib/store';
 import { getPlan } from '../data/workoutPlans';
-import { dayForWeekday, sessionProgress } from '../lib/workout';
+import { dayForWeekday, sessionProgress, effectivePlan } from '../lib/workout';
 import { menuTotals } from '../data/weeklyMenu';
 import { isoDate, weekdayOf } from '../lib/date';
 
@@ -24,9 +24,10 @@ export function Today() {
   const menu = useMenu((s) => s.menu);
   const entries = useHealth((s) => s.entries);
 
+  const overrides = usePlan((s) => s.weekdayOverride);
   const today = isoDate();
   const wd = weekdayOf();
-  const plan = getPlan(daysPerWeek);
+  const plan = effectivePlan(getPlan(daysPerWeek), overrides);
   const todayDay = dayForWeekday(plan, wd);
   const session = todayDay ? sessions[sessionKey(today, todayDay.id)] : undefined;
   const prog = sessionProgress(session);

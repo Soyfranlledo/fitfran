@@ -24,14 +24,25 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      profile: { name: 'Fran', goal: 'mantener', heightCm: 178 },
+      profile: { name: 'Fran', goal: 'perder', heightCm: 178, sex: 'h', age: 30, activity: 'moderado' },
       daysPerWeek: 4,
-      macros: { calories: 2300, protein: 180, carbs: 220, fat: 70, bodyFatTarget: 15 },
+      macros: { calories: 2000, protein: 170, carbs: 175, fat: 60, bodyFatTarget: 13 },
       setProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
       setDaysPerWeek: (d) => set({ daysPerWeek: d }),
       setMacros: (m) => set((s) => ({ macros: { ...s.macros, ...m } })),
     }),
-    { name: 'fitfran-settings' }
+    {
+      name: 'fitfran-settings',
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        return {
+          ...current,
+          ...p,
+          profile: { ...current.profile, ...(p.profile ?? {}) },
+          macros: { ...current.macros, ...(p.macros ?? {}) },
+        };
+      },
+    }
   )
 );
 
@@ -233,6 +244,66 @@ export const useMenu = create<MenuState>()(
         })),
       resetMenu: () => set({ menu: DEFAULT_MENU }),
     }),
-    { name: 'fitfran-menu', version: 1 }
+    {
+      name: 'fitfran-menu',
+      version: 2,
+      // Al subir de versión, adoptamos el nuevo menú por defecto.
+      migrate: () => ({ menu: DEFAULT_MENU }),
+    }
   )
 );
+
+/* ============================ Personalización del plan ============================ */
+interface PlanState {
+  /** dayId -> día de la semana asignado por el usuario (1..7) */
+  weekdayOverride: Record<string, number>;
+  /** Asigna un día de la semana a una sesión; si está ocupado, intercambia. */
+  assignWeekday: (effective: { id: string; weekday: number }[], dayId: string, weekday: number) => void;
+  clearOverrides: () => void;
+}
+
+export const usePlan = create<PlanState>()(
+  persist(
+    (set) => ({
+      weekdayOverride: {},
+      assignWeekday: (effective, dayId, weekday) =>
+        set((s) => {
+          const ov = { ...s.weekdayOverride };
+          const current = effective.find((d) => d.id === dayId)?.weekday;
+          const occupant = effective.find((d) => d.weekday === weekday && d.id !== dayId);
+          if (occupant && current != null) ov[occupant.id] = current;
+          ov[dayId] = weekday;
+          return { weekdayOverride: ov };
+        }),
+      clearOverrides: () => set({ weekdayOverride: {} }),
+    }),
+    { name: 'fitfran-plan' }
+  )
+);
+
+/* ============================ Copia de seguridad ============================ */
+const BACKUP_KEYS = [
+  'fitfran-settings',
+  'fitfran-workouts',
+  'fitfran-health',
+  'fitfran-menu',
+  'fitfran-plan',
+];
+
+export function exportData(): string {
+  const data: Record<string, unknown> = { _app: 'FitFran', _version: 1 };
+  for (const k of BACKUP_KEYS) {
+    const raw = localStorage.getItem(k);
+    if (raw) data[k] = JSON.parse(raw);
+  }
+  return JSON.stringify(data, null, 2);
+}
+
+export function importData(json: string): boolean {
+  const parsed = JSON.parse(json);
+  if (!parsed || parsed._app !== 'FitFran') throw new Error('Formato no válido');
+  for (const k of BACKUP_KEYS) {
+    if (parsed[k]) localStorage.setItem(k, JSON.stringify(parsed[k]));
+  }
+  return true;
+}

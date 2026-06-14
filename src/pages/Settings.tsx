@@ -1,11 +1,39 @@
-import { User, CalendarRange, RefreshCw, Trash2, Share, Info } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { User, CalendarRange, RefreshCw, Trash2, Share, Info, Download, Upload, DatabaseBackup } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Card, SectionTitle, Segmented } from '../components/ui';
-import { useMenu, useSettings } from '../lib/store';
+import { useMenu, useSettings, exportData, importData } from '../lib/store';
+import { isoDate } from '../lib/date';
 
 export function Settings() {
   const { profile, setProfile, daysPerWeek, setDaysPerWeek, macros } = useSettings();
   const resetMenu = useMenu((s) => s.resetMenu);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  function doExport() {
+    const blob = new Blob([exportData()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fitfran-backup-${isoDate()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function doImport(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        importData(String(reader.result));
+        setMsg('Datos importados ✓ Recargando…');
+        setTimeout(() => location.reload(), 800);
+      } catch {
+        setMsg('Archivo no válido.');
+      }
+    };
+    reader.readAsText(file);
+  }
 
   return (
     <div className="animate-fade">
@@ -43,15 +71,55 @@ export function Settings() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[12px] font-semibold text-muted">Altura (cm)</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={profile.heightCm || ''}
+                  onChange={(e) => setProfile({ heightCm: parseInt(e.target.value) || 0 })}
+                  className="mt-0.5 w-full h-10 rounded-xl bg-ink-2 border border-line px-3 font-semibold outline-none focus:border-accent/60"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-semibold text-muted">Edad</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={profile.age || ''}
+                  onChange={(e) => setProfile({ age: parseInt(e.target.value) || 0 })}
+                  className="mt-0.5 w-full h-10 rounded-xl bg-ink-2 border border-line px-3 font-semibold outline-none focus:border-accent/60"
+                />
+              </div>
+            </div>
             <div>
-              <label className="text-[12px] font-semibold text-muted">Altura (cm)</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={profile.heightCm || ''}
-                onChange={(e) => setProfile({ heightCm: parseInt(e.target.value) || 0 })}
-                className="mt-0.5 w-full h-10 rounded-xl bg-ink-2 border border-line px-3 font-semibold outline-none focus:border-accent/60"
-              />
+              <label className="text-[12px] font-semibold text-muted">Sexo</label>
+              <div className="mt-1">
+                <Segmented
+                  value={profile.sex}
+                  onChange={(v) => setProfile({ sex: v })}
+                  options={[
+                    { label: 'Hombre', value: 'h' },
+                    { label: 'Mujer', value: 'm' },
+                  ]}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-muted">Nivel de actividad</label>
+              <div className="mt-1">
+                <Segmented
+                  value={profile.activity}
+                  onChange={(v) => setProfile({ activity: v })}
+                  options={[
+                    { label: 'Sedent.', value: 'sedentario' },
+                    { label: 'Ligero', value: 'ligero' },
+                    { label: 'Moder.', value: 'moderado' },
+                    { label: 'Alto', value: 'alto' },
+                  ]}
+                />
+              </div>
             </div>
           </Card>
         </div>
@@ -88,6 +156,47 @@ export function Settings() {
               <Row label="Grasa" value={`${macros.fat} g`} />
             </div>
             <p className="text-[12px] text-muted mt-3">Edítalos desde la pestaña Nutrición → Ajustar.</p>
+          </Card>
+        </div>
+
+        {/* Copia de seguridad */}
+        <div>
+          <SectionTitle>Copia de seguridad</SectionTitle>
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <DatabaseBackup size={18} className="text-health" />
+              <h3 className="font-bold">Tus datos, a salvo</h3>
+            </div>
+            <p className="text-[14px] text-muted leading-relaxed mb-4">
+              Todo se guarda en este dispositivo. Exporta un archivo de respaldo de vez en cuando
+              (entrenos, pesos, salud y menú) para no perder tu registro o pasarlo a otro móvil.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={doExport}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-health text-ink py-3 font-bold active:scale-95"
+              >
+                <Download size={18} /> Exportar
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-card-2 border border-line text-fg py-3 font-bold active:scale-95"
+              >
+                <Upload size={18} /> Importar
+              </button>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) doImport(f);
+                e.target.value = '';
+              }}
+            />
+            {msg && <p className={`text-sm font-semibold mt-3 ${msg.includes('✓') ? 'text-accent' : 'text-danger'}`}>{msg}</p>}
           </Card>
         </div>
 

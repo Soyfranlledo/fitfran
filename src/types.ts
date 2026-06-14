@@ -108,4 +108,7 @@ export interface Profile {
   name: string;
   goal: 'perder' | 'mantener' | 'ganar';
   heightCm: number;
+  sex: 'h' | 'm';
+  age: number;
+  activity: 'sedentario' | 'ligero' | 'moderado' | 'alto';
 }
