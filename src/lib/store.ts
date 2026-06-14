@@ -24,15 +24,22 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      profile: { name: 'Fran', goal: 'perder', heightCm: 178, sex: 'h', age: 30, activity: 'moderado' },
+      profile: { name: 'Fran', goal: 'perder', heightCm: 186, sex: 'h', age: 38, activity: 'moderado' },
       daysPerWeek: 4,
-      macros: { calories: 2000, protein: 170, carbs: 175, fat: 60, bodyFatTarget: 13 },
+      macros: { calories: 2250, protein: 180, carbs: 225, fat: 70, bodyFatTarget: 13 },
       setProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
       setDaysPerWeek: (d) => set({ daysPerWeek: d }),
       setMacros: (m) => set((s) => ({ macros: { ...s.macros, ...m } })),
     }),
     {
       name: 'fitfran-settings',
+      version: 2,
+      // v2: fija el perfil y objetivos personalizados de Fran (su app personal).
+      migrate: (persisted: any) => ({
+        ...(persisted ?? {}),
+        profile: { name: 'Fran', goal: 'perder', heightCm: 186, sex: 'h', age: 38, activity: 'moderado' },
+        macros: { calories: 2250, protein: 180, carbs: 225, fat: 70, bodyFatTarget: 13 },
+      }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<SettingsState>;
         return {
@@ -246,7 +253,7 @@ export const useMenu = create<MenuState>()(
     }),
     {
       name: 'fitfran-menu',
-      version: 2,
+      version: 3,
       // Al subir de versión, adoptamos el nuevo menú por defecto.
       migrate: () => ({ menu: DEFAULT_MENU }),
     }

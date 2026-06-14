@@ -31,56 +31,57 @@ const meal = (
 */
 
 // --- DESAYUNOS ---
-const desA = meal('Desayuno', '08:00', 470, 38, 58, 11, [
-  'Avena | 70 g',
-  'Leche desnatada | 250 ml',
+const desA = meal('Desayuno', '08:00', 520, 42, 62, 13, [
+  'Avena | 80 g',
+  'Leche desnatada | 300 ml',
   'Plátano | 1 ud',
   'Proteína en polvo | 1 scoop',
+  'Crema de cacahuete | 10 g',
 ]);
-const desB = meal('Desayuno', '08:00', 450, 30, 24, 26, [
-  'Huevos | 3-4 ud',
-  'Pan integral | 50 g',
+const desB = meal('Desayuno', '08:00', 510, 34, 32, 28, [
+  'Huevos | 4 ud',
+  'Pan integral | 60 g',
   'Aguacate | 1/2 ud',
   'Tomate | —',
 ]);
 
 // --- COMIDAS (cocinar en tandas) ---
-const comPollo = meal('Comida', '14:00', 610, 55, 66, 14, [
-  'Pollo a la plancha | 200 g',
-  'Arroz | 80 g (en seco)',
+const comPollo = meal('Comida', '14:00', 720, 60, 85, 16, [
+  'Pollo a la plancha | 220 g',
+  'Arroz | 100 g (en seco)',
   'Verdura (menestra) | —',
-  'Aceite de oliva | 8 ml',
+  'Aceite de oliva | 10 ml',
 ]);
-const comTernera = meal('Comida', '14:00', 600, 50, 55, 22, [
-  'Ternera picada magra | 180 g',
-  'Patata | 300 g',
+const comTernera = meal('Comida', '14:00', 710, 56, 72, 24, [
+  'Ternera picada magra | 200 g',
+  'Patata | 350 g',
   'Ensalada | —',
-  'Aceite de oliva | 8 ml',
+  'Aceite de oliva | 10 ml',
 ]);
 
 // --- MERIENDA ---
-const merienda = meal('Merienda', '17:30', 290, 24, 26, 11, [
-  'Yogur griego natural | 200 g',
-  'Manzana | 1 ud',
+const merienda = meal('Merienda', '17:30', 330, 28, 32, 11, [
+  'Yogur griego natural | 250 g',
+  'Plátano / manzana | 1 ud',
   'Nueces | 20 g',
 ]);
-const meriendaB = meal('Merienda', '17:30', 270, 26, 24, 7, [
-  'Pan integral | 50 g',
-  'Pavo / atún | 90 g',
+const meriendaB = meal('Merienda', '17:30', 320, 30, 30, 8, [
+  'Pan integral | 60 g',
+  'Pavo / atún | 100 g',
   'Tomate | —',
 ]);
 
 // --- CENAS ---
-const cenaPescado = meal('Cena', '21:00', 500, 46, 40, 15, [
-  'Pescado blanco / salmón | 200 g',
-  'Boniato | 200 g',
+const cenaPescado = meal('Cena', '21:00', 620, 50, 55, 18, [
+  'Pescado blanco / salmón | 220 g',
+  'Boniato | 250 g',
   'Ensalada | —',
-  'Aceite de oliva | 8 ml',
+  'Aceite de oliva | 10 ml',
 ]);
-const cenaTortilla = meal('Cena', '21:00', 490, 30, 26, 28, [
-  'Huevos | 3 ud',
+const cenaTortilla = meal('Cena', '21:00', 600, 36, 34, 34, [
+  'Huevos | 4 ud',
   'Verdura salteada | —',
-  'Pan integral | 40 g',
+  'Pan integral | 50 g',
   'Aguacate | 1/2 ud',
 ]);
 
