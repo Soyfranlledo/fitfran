@@ -2,6 +2,10 @@
 
 Tu app personal de **entrenamiento y nutrición**. Minimalista, mobile-first y pensada para usar en el gym desde el iPhone. Todos tus datos se guardan **en tu dispositivo** (no hay servidor ni cuentas).
 
+**🌐 App publicada (HTTPS, instalable, offline):** https://soyfranlledo.github.io/fitfran/
+
+> Cada `git push` a `main` reconstruye y redespliega la app automáticamente (GitHub Actions → Pages).
+
 ## Qué incluye
 
 - **Hoy** — resumen del día: entreno, nutrición y salud de un vistazo.
