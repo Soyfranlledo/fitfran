@@ -58,3 +58,13 @@ También puedes meter los datos a mano con el botón **＋** (rápido desde el m
 ## Stack
 
 React + TypeScript + Vite + Tailwind v4 + Zustand (persistencia local) + PWA.
+
+## Documentacion del proyecto
+
+Para continuar el desarrollo en una sesion nueva:
+
+1. Lee [`AGENTS.md`](AGENTS.md).
+2. Revisa el [estado actual](docs/PROJECT_STATUS.md).
+3. Usa el [indice de documentacion](docs/README.md) para arquitectura, datos,
+   flujo de trabajo y decisiones.
+4. Consulta [`CHANGELOG.md`](CHANGELOG.md) para saber que se hizo y cuando.
