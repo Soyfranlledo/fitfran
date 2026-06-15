@@ -329,7 +329,7 @@ export const usePlan = create<PlanState>()(
 );
 
 /* ============================ Copia de seguridad ============================ */
-const BACKUP_KEYS = [
+export const BACKUP_KEYS = [
   'fitfran-settings',
   'fitfran-workouts',
   'fitfran-health',

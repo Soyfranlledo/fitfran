@@ -11,6 +11,7 @@ import { ExerciseDetail } from './pages/ExerciseDetail';
 import { Nutrition } from './pages/Nutrition';
 import { Health } from './pages/Health';
 import { Settings } from './pages/Settings';
+import { initCloudSync } from './lib/cloud';
 
 function App() {
   return (
@@ -41,3 +42,6 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Sincronización en la nube (si hay un token guardado en este dispositivo).
+initCloudSync();

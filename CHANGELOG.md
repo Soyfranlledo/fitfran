@@ -5,6 +5,18 @@ tecnicas de fondo viven en `docs/decisions/`.
 
 ## 15 de junio de 2026
 
+### Sincronizacion en la nube
+
+- Tus datos (entrenos, pesos, salud, menu y ajustes) se sincronizan a un Gist
+  privado de tu cuenta de GitHub: los mismos en movil y ordenador, en Safari y
+  en la app instalada, y sobreviven a las actualizaciones.
+- Conexion con un token de GitHub (permiso solo `gist`), una vez por
+  dispositivo, desde Ajustes -> Sincronizacion en la nube.
+- Fusion sin perdida de datos: al unir dispositivos, un registro vacio nunca
+  pisa uno con datos reales.
+- Motivo: evitar el incidente del 15-jun en que un entreno dejo de verse al
+  registrarlo en un cajon (Safari) y mirarlo en otro (app instalada).
+
 ### Documentacion de continuidad
 
 - Añadida una guia de entrada para sesiones nuevas en `AGENTS.md`.

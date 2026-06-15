@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
-import { User, CalendarRange, RefreshCw, Trash2, Share, Info, Download, Upload, DatabaseBackup } from 'lucide-react';
+import { useRef, useState, useSyncExternalStore } from 'react';
+import { User, CalendarRange, RefreshCw, Trash2, Share, Info, Download, Upload, DatabaseBackup, Cloud, CloudOff, Link2, LogOut, Check } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Card, SectionTitle, Segmented } from '../components/ui';
 import { useMenu, useSettings, exportData, importData } from '../lib/store';
+import { subscribeCloud, getCloud, connectCloud, disconnectCloud, syncNow } from '../lib/cloud';
 import { isoDate } from '../lib/date';
 
 export function Settings() {
@@ -159,6 +160,9 @@ export function Settings() {
           </Card>
         </div>
 
+        {/* Sincronización en la nube */}
+        <CloudCard />
+
         {/* Copia de seguridad */}
         <div>
           <SectionTitle>Copia de seguridad</SectionTitle>
@@ -254,6 +258,149 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between">
       <span className="text-muted">{label}</span>
       <span className="font-bold">{value}</span>
+    </div>
+  );
+}
+
+function relTime(iso?: string): string {
+  if (!iso) return '';
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return 'hace un momento';
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.round(h / 24)} d`;
+}
+
+function CloudCard() {
+  const cloud = useSyncExternalStore(subscribeCloud, getCloud);
+  const [token, setToken] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function onConnect() {
+    if (!token.trim()) return;
+    setBusy(true);
+    await connectCloud(token.trim());
+    setBusy(false);
+    setToken('');
+  }
+
+  const tokenUrl =
+    'https://github.com/settings/tokens/new?scopes=gist&description=FitFran';
+
+  return (
+    <div>
+      <SectionTitle>Sincronización en la nube</SectionTitle>
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-2">
+          {cloud.connected ? (
+            <Cloud size={18} className="text-accent" />
+          ) : (
+            <CloudOff size={18} className="text-faint" />
+          )}
+          <h3 className="font-bold">
+            {cloud.connected ? 'Conectado a tu Gist privado' : 'Tus datos, en la nube'}
+          </h3>
+        </div>
+
+        {!cloud.connected ? (
+          <>
+            <p className="text-[14px] text-muted leading-relaxed mb-4">
+              Guarda tus entrenos en un archivo privado de tu GitHub. Así son los mismos en el
+              móvil y en el ordenador, en Safari y en la app instalada, y sobreviven a las
+              actualizaciones. Solo tienes que pegar un token una vez por dispositivo.
+            </p>
+            <input
+              type="password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="Pega aquí tu token de GitHub"
+              className="w-full h-11 rounded-xl bg-ink-2 border border-line px-3 font-mono text-sm outline-none focus:border-accent/60 mb-3"
+            />
+            <button
+              onClick={onConnect}
+              disabled={busy || !token.trim()}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-accent text-ink py-3 font-bold active:scale-95 disabled:opacity-50"
+            >
+              <Link2 size={18} /> {busy ? 'Conectando…' : 'Conectar'}
+            </button>
+            {cloud.status === 'error' && cloud.error && (
+              <p className="text-sm font-semibold text-danger mt-3">⚠ {cloud.error}</p>
+            )}
+            <details className="mt-4 text-[13px] text-muted">
+              <summary className="cursor-pointer font-semibold text-fg">¿Cómo consigo el token?</summary>
+              <ol className="list-decimal pl-5 mt-2 space-y-1 leading-relaxed">
+                <li>
+                  Abre{' '}
+                  <a className="text-accent underline" href={tokenUrl} target="_blank" rel="noreferrer">
+                    esta página de GitHub
+                  </a>{' '}
+                  (ya viene preparada).
+                </li>
+                <li>
+                  Elige caducidad (p. ej. «No expiration») y pulsa <b className="text-fg">Generate token</b>.
+                </li>
+                <li>
+                  Copia el token (<span className="font-mono">ghp_…</span>) y pégalo arriba.
+                </li>
+              </ol>
+              <p className="mt-2">
+                Solo concede permiso a <b className="text-fg">gists</b>: no puede tocar tu código ni
+                nada más, y lo puedes revocar cuando quieras.
+              </p>
+            </details>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 text-[14px] mb-3 min-h-6">
+              {cloud.status === 'syncing' && (
+                <span className="text-muted flex items-center gap-2">
+                  <RefreshCw size={15} className="animate-spin" /> Sincronizando…
+                </span>
+              )}
+              {cloud.status === 'ok' && (
+                <span className="text-accent flex items-center gap-2">
+                  <Check size={15} /> Sincronizado{relTime(cloud.lastSync) ? ` · ${relTime(cloud.lastSync)}` : ''}
+                </span>
+              )}
+              {cloud.status === 'idle' && (
+                <span className="text-muted">
+                  {cloud.lastSync ? `Última sync ${relTime(cloud.lastSync)}` : 'Listo para sincronizar'}
+                </span>
+              )}
+              {cloud.status === 'error' && (
+                <span className="text-danger">⚠ {cloud.error}</span>
+              )}
+            </div>
+            {cloud.lastDevice && (
+              <p className="text-[12px] text-faint -mt-1 mb-3">Última escritura desde: {cloud.lastDevice}</p>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => syncNow()}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-accent text-ink py-3 font-bold active:scale-95"
+              >
+                <RefreshCw size={18} /> Sincronizar
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('¿Desconectar la nube en este dispositivo? Tus datos seguirán a salvo en la nube y en este móvil.'))
+                    disconnectCloud();
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-card-2 border border-line text-fg py-3 font-bold active:scale-95"
+              >
+                <LogOut size={18} /> Desconectar
+              </button>
+            </div>
+            <p className="text-[12px] text-faint mt-3">
+              Se sincroniza solo al guardar un cambio y al volver a abrir la app.
+            </p>
+          </>
+        )}
+      </Card>
     </div>
   );
 }
