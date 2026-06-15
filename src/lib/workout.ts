@@ -37,6 +37,19 @@ export function sessionProgress(session?: WorkoutSession): { done: number; total
   return { done, total, pct: total ? done / total : 0 };
 }
 
+/**
+ * Una sesión está "completada" si el usuario la finalizó explícitamente
+ * (`completedAt`) o si tiene todos los ejercicios marcados. Usar `completedAt`
+ * evita que, al intercambiar un ejercicio por una alternativa, el entreno
+ * quede a medias (p. ej. 6/7) aunque ya lo hayas dado por terminado.
+ */
+export function isSessionComplete(session?: WorkoutSession): boolean {
+  if (!session) return false;
+  if (session.completedAt) return true;
+  const { total, pct } = sessionProgress(session);
+  return total > 0 && pct >= 1;
+}
+
 export const muscleColor: Record<string, string> = {
   Pecho: '#ff7a7a',
   Espalda: '#5ec8ff',

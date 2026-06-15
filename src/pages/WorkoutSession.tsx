@@ -10,7 +10,7 @@ import {
   lastWeightFor,
 } from '../lib/store';
 import { PLANS } from '../data/workoutPlans';
-import { muscleColor, sessionProgress, estimatedMinutesForExercises } from '../lib/workout';
+import { muscleColor, sessionProgress, isSessionComplete, estimatedMinutesForExercises } from '../lib/workout';
 import { isoDate, shortDate } from '../lib/date';
 import type { Exercise } from '../types';
 
@@ -62,7 +62,7 @@ export function WorkoutSessionPage() {
   const estimated = estimatedMinutesForExercises(
     selectedExercises.length ? selectedExercises : day.exercises
   );
-  const done = prog.total > 0 && prog.pct >= 1;
+  const done = isSessionComplete(session);
 
   return (
     <div className="animate-fade">
@@ -88,11 +88,11 @@ export function WorkoutSessionPage() {
           <div className="flex-1 h-2.5 rounded-full bg-line overflow-hidden">
             <div
               className="h-full rounded-full bg-accent transition-all duration-500"
-              style={{ width: `${prog.pct * 100}%` }}
+              style={{ width: `${(done ? 1 : prog.pct) * 100}%` }}
             />
           </div>
           <span className="text-sm font-bold text-muted tabular-nums">
-            {prog.done}/{prog.total}
+            {done ? prog.total : prog.done}/{prog.total}
           </span>
         </div>
 
@@ -160,7 +160,11 @@ export function WorkoutSessionPage() {
           }`}
         >
           <Trophy size={20} />
-          {done ? 'Finalizar entreno' : 'Marcar como completado'}
+          {session?.completedAt
+            ? 'Entreno finalizado ✓'
+            : done
+              ? 'Finalizar entreno'
+              : 'Marcar como completado'}
         </button>
         <div className="h-4" />
       </div>
@@ -172,7 +176,7 @@ export function WorkoutSessionPage() {
               <Trophy size={48} />
             </div>
             <h2 className="text-3xl font-extrabold">¡Sesión hecha!</h2>
-            <p className="text-muted mt-2">{day.name} · {prog.done} de {prog.total} ejercicios</p>
+            <p className="text-muted mt-2">{day.name} · {done ? prog.total : prog.done} de {prog.total} ejercicios</p>
             <p className="text-faint text-sm mt-6">Toca para volver al inicio</p>
           </div>
         </div>

@@ -5,6 +5,14 @@ tecnicas de fondo viven en `docs/decisions/`.
 
 ## 15 de junio de 2026
 
+### Arreglo: finalizar entreno con ejercicios intercambiados
+
+- Al cambiar un ejercicio por una alternativa, el entreno podia quedarse a
+  medias (p. ej. 6/7) y "Finalizar entreno" no dejaba rastro visible.
+- Ahora un entreno se considera completado cuando lo finalizas
+  explicitamente, no solo cuando marcas todos los ejercicios. Hoy y la
+  pantalla de sesion reflejan el estado finalizado de forma coherente.
+
 ### Sincronizacion en la nube
 
 - Tus datos (entrenos, pesos, salud, menu y ajustes) se sincronizan a un Gist

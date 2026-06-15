@@ -14,7 +14,7 @@ import { Card } from '../components/ui';
 import { ProgressRing } from '../components/ProgressRing';
 import { useHealth, useMenu, useSettings, useWorkout, usePlan, sessionKey } from '../lib/store';
 import { getPlan } from '../data/workoutPlans';
-import { dayForWeekday, sessionProgress, effectivePlan } from '../lib/workout';
+import { dayForWeekday, sessionProgress, isSessionComplete, effectivePlan } from '../lib/workout';
 import { menuTotals } from '../data/weeklyMenu';
 import { isoDate, weekdayOf } from '../lib/date';
 
@@ -31,6 +31,7 @@ export function Today() {
   const todayDay = dayForWeekday(plan, wd);
   const session = todayDay ? sessions[sessionKey(today, todayDay.id)] : undefined;
   const prog = sessionProgress(session);
+  const complete = isSessionComplete(session);
 
   const todayMenu = menu.find((m) => m.weekday === wd);
   const totals = todayMenu ? menuTotals(todayMenu) : { kcal: 0, protein: 0, carbs: 0, fat: 0 };
@@ -81,8 +82,8 @@ export function Today() {
                 )}
               </div>
               {todayDay ? (
-                <ProgressRing value={prog.pct} size={66}>
-                  {prog.pct >= 1 ? (
+                <ProgressRing value={complete ? 1 : prog.pct} size={66}>
+                  {complete ? (
                     <Check className="text-accent" size={26} />
                   ) : (
                     <div className="text-center leading-none">
@@ -100,7 +101,7 @@ export function Today() {
             {todayDay && (
               <div className="mt-4 flex items-center gap-2 rounded-2xl bg-accent text-ink font-bold py-3 justify-center">
                 <Dumbbell size={18} />
-                {prog.done === 0 ? 'Empezar entreno' : prog.pct >= 1 ? 'Entreno completado' : 'Continuar entreno'}
+                {complete ? 'Entreno completado' : prog.done === 0 ? 'Empezar entreno' : 'Continuar entreno'}
               </div>
             )}
           </Card>
