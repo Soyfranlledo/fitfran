@@ -9,7 +9,7 @@ Tu app personal de **entrenamiento y nutrición**. Minimalista, mobile-first y p
 ## Qué incluye
 
 - **Hoy** — resumen del día: entreno, nutrición y salud de un vistazo.
-- **Entreno** — rutina de **3, 4 o 5 días** (por defecto 4). Lista de ejercicios para marcar como hechos y **registrar pesos y repeticiones** serie a serie. Ficha de cada ejercicio con técnica, consejos y tu progreso (gráfica de cargas).
+- **Entreno** — rutina de **3, 4 o 5 días** (por defecto 4). Cada sesión incluye ejercicios principales y **alternativas que puedes añadir o quitar según las máquinas disponibles**, todas con registro de pesos y repeticiones serie a serie. Ficha de cada ejercicio con técnica, consejos y tu progreso (gráfica de cargas).
 - **Nutrición** — **menú semanal y diario** editable, con calorías y macros por comida. Ajusta tus objetivos: **calorías, % de grasa y macros (proteína / carbos / grasa)**.
 - **Salud** — registra **peso, % grasa, pasos y sueño** con gráficas de evolución. Importación desde **Apple Salud** mediante un Atajo (ver abajo).
 

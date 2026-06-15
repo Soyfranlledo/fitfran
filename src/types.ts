@@ -29,6 +29,8 @@ export interface WorkoutDay {
   /** Día de la semana asignado (1=lunes ... 7=domingo) */
   weekday: number;
   exercises: Exercise[];
+  /** Opciones extra que el usuario puede añadir o intercambiar durante la sesión */
+  alternatives?: Exercise[];
 }
 
 export interface WorkoutPlan {

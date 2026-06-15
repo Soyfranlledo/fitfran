@@ -7,6 +7,7 @@ import type {
   Meal,
   Profile,
   WorkoutDay,
+  Exercise,
   WorkoutSession,
 } from '../types';
 import { DEFAULT_MENU } from '../data/weeklyMenu';
@@ -66,6 +67,8 @@ interface WorkoutState {
   ) => void;
   toggleSet: (key: string, exId: string, setIdx: number) => void;
   toggleExercise: (key: string, exId: string, sets: number) => void;
+  addExercise: (key: string, exercise: Exercise) => void;
+  removeExercise: (key: string, exId: string) => void;
   completeSession: (key: string, when: string) => void;
   resetSession: (key: string) => void;
 }
@@ -146,6 +149,43 @@ export const useWorkout = create<WorkoutState>()(
                 ...sess,
                 logs: { ...sess.logs, [exId]: { ...log, done: next, sets } },
               },
+            },
+          };
+        }),
+      addExercise: (key, exercise) =>
+        set((s) => {
+          const sess = s.sessions[key];
+          if (!sess || sess.logs[exercise.id]) return s;
+          return {
+            sessions: {
+              ...s.sessions,
+              [key]: {
+                ...sess,
+                logs: {
+                  ...sess.logs,
+                  [exercise.id]: {
+                    done: false,
+                    sets: Array.from({ length: exercise.sets }, () => ({
+                      weight: 0,
+                      reps: 0,
+                      done: false,
+                    })),
+                  },
+                },
+              },
+            },
+          };
+        }),
+      removeExercise: (key, exId) =>
+        set((s) => {
+          const sess = s.sessions[key];
+          if (!sess || !sess.logs[exId]) return s;
+          const logs = { ...sess.logs };
+          delete logs[exId];
+          return {
+            sessions: {
+              ...s.sessions,
+              [key]: { ...sess, logs },
             },
           };
         }),

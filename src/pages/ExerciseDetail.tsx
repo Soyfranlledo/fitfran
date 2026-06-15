@@ -12,7 +12,7 @@ import type { Exercise } from '../types';
 function findExercise(exId: string): Exercise | null {
   for (const p of Object.values(PLANS)) {
     for (const d of p.days) {
-      const e = d.exercises.find((x) => x.id === exId);
+      const e = [...d.exercises, ...(d.alternatives ?? [])].find((x) => x.id === exId);
       if (e) return e;
     }
   }

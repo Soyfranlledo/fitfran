@@ -170,7 +170,7 @@ export function Training() {
                             <Clock size={13} /> ≈ {estimatedMinutes(day)} min
                           </span>
                           <span className="flex items-center gap-1">
-                            <ListChecks size={13} /> {day.exercises.length} ejercicios
+                            <ListChecks size={13} /> {day.exercises.length} + {day.alternatives?.length ?? 0} opciones
                           </span>
                         </div>
                       </>

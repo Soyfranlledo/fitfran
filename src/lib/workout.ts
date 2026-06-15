@@ -1,4 +1,4 @@
-import type { WorkoutDay, WorkoutPlan, WorkoutSession } from '../types';
+import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutSession } from '../types';
 
 export function dayForWeekday(plan: WorkoutPlan, weekday: number): WorkoutDay | undefined {
   return plan.days.find((d) => d.weekday === weekday);
@@ -14,11 +14,15 @@ export function effectivePlan(plan: WorkoutPlan, overrides: Record<string, numbe
 
 /** Duración estimada de una sesión en minutos (calentamiento + series + descansos). */
 export function estimatedMinutes(day: WorkoutDay): number {
+  return estimatedMinutesForExercises(day.exercises);
+}
+
+export function estimatedMinutesForExercises(exercises: Exercise[]): number {
   const WARMUP = 8 * 60;
   const WORK = 45; // seg por serie
   const TRANSITION = 30; // seg de montaje por serie
   let secs = WARMUP;
-  for (const ex of day.exercises) {
+  for (const ex of exercises) {
     const rest = parseInt(ex.rest) || 60;
     secs += ex.sets * (WORK + TRANSITION + rest);
   }

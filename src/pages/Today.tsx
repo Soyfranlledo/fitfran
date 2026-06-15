@@ -70,7 +70,7 @@ export function Today() {
                   <>
                     <h3 className="text-2xl font-bold mt-1 truncate">{todayDay.name}</h3>
                     <p className="text-muted text-sm mt-0.5">
-                      {todayDay.exercises.length} ejercicios · {todayDay.focus}
+                      {todayDay.exercises.length} ejercicios + {todayDay.alternatives?.length ?? 0} alternativas
                     </p>
                   </>
                 ) : (

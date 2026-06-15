@@ -12,6 +12,17 @@ const ex = (
   cues: string[]
 ) => ({ id: `e${_i++}`, name, muscle, sets, reps, rest, how, cues });
 
+const alt = (
+  id: string,
+  name: string,
+  muscle: import('../types').MuscleGroup,
+  sets: number,
+  reps: string,
+  rest: string,
+  how: string,
+  cues: string[]
+) => ({ id: `alt-${id}`, name, muscle, sets, reps, rest, how, cues });
+
 /* ============================ 4 DÍAS (por defecto) ============================ */
 const PLAN_4: WorkoutPlan = {
   daysPerWeek: 4,
@@ -43,6 +54,14 @@ const PLAN_4: WorkoutPlan = {
           'Aísla el tríceps con poco peso y buena forma.',
           ['Sin balanceo', 'Control en la negativa']),
       ],
+      alternatives: [
+        alt('d4-1-press-maquina', 'Press de pecho en máquina', 'Pecho', 3, '8-12', '90s',
+          'Ajusta el asiento para empujar a la altura media del pecho.',
+          ['Escápulas apoyadas', 'No bloquees los codos', 'Bajada controlada']),
+        alt('d4-1-triceps-cuerda', 'Extensión de tríceps sobre cabeza', 'Tríceps', 3, '10-15', '60s',
+          'Con cuerda en polea, extiende los brazos por encima de la cabeza.',
+          ['Codos apuntando al frente', 'Estira bien el tríceps']),
+      ],
     },
     {
       id: 'd4-2',
@@ -69,6 +88,14 @@ const PLAN_4: WorkoutPlan = {
           'Agarre neutro, trabaja braquial y antebrazo.',
           ['Control', 'No subas el codo']),
       ],
+      alternatives: [
+        alt('d4-2-remo-mancuerna', 'Remo con mancuerna a una mano', 'Espalda', 3, '8-12', '90s',
+          'Apoya una mano y lleva la mancuerna hacia la cadera.',
+          ['Espalda neutra', 'Codo cerca del cuerpo', 'Sin girar el torso']),
+        alt('d4-2-curl-predicador', 'Curl en banco predicador', 'Bíceps', 3, '10-12', '60s',
+          'Apoya los brazos y flexiona el codo sin despegar el tríceps del banco.',
+          ['No bloquees abajo', 'Sube sin impulso']),
+      ],
     },
     {
       id: 'd4-3',
@@ -94,6 +121,14 @@ const PLAN_4: WorkoutPlan = {
         ex('Elevación de gemelos', 'Pierna', 4, '12-20', '45s',
           'Sube de puntillas al máximo y estira abajo.',
           ['Rango completo', 'Pausa arriba']),
+      ],
+      alternatives: [
+        alt('d4-3-hip-thrust', 'Hip Thrust con barra', 'Glúteo', 4, '8-12', '120s',
+          'Apoya la espalda alta en el banco y eleva la cadera empujando con los talones.',
+          ['Barbilla al pecho', 'Tibia vertical arriba', 'Aprieta glúteos 1s']),
+        alt('d4-3-bulgara', 'Sentadilla búlgara', 'Pierna', 3, '10-12 por pierna', '90s',
+          'Apoya el pie trasero en un banco y baja con control sobre la pierna delantera.',
+          ['Rodilla alineada', 'Torso estable', 'Empuja con el pie delantero']),
       ],
     },
     {
@@ -123,6 +158,14 @@ const PLAN_4: WorkoutPlan = {
         ex('Crunch en polea / rueda', 'Core', 3, '12-15', '45s',
           'Flexiona el tronco llevando las costillas a la cadera.',
           ['Sin tirón de cuello', 'Control']),
+      ],
+      alternatives: [
+        alt('d4-4-face-pull', 'Face pull en polea', 'Hombro', 3, '15-20', '60s',
+          'Tira de la cuerda hacia la cara separando las manos.',
+          ['Codos altos', 'Aprieta la espalda alta', 'Sin arquear']),
+        alt('d4-4-curl-z', 'Curl con barra Z', 'Bíceps', 3, '8-12', '75s',
+          'Flexiona los codos manteniéndolos junto al cuerpo.',
+          ['Sin balanceo', 'Controla la bajada']),
       ],
     },
   ],
@@ -159,6 +202,14 @@ const PLAN_3: WorkoutPlan = {
           'Vertical para tríceps.',
           ['Control en la bajada']),
       ],
+      alternatives: [
+        alt('d3-1-press-maquina', 'Press de pecho en máquina', 'Pecho', 3, '8-12', '90s',
+          'Empuja desde el pecho manteniendo la espalda apoyada.',
+          ['Escápulas estables', 'Bajada lenta']),
+        alt('d3-1-frances', 'Press francés con barra Z', 'Tríceps', 3, '10-12', '75s',
+          'Flexiona los codos llevando la barra hacia la frente y vuelve a extender.',
+          ['Codos quietos', 'Usa un peso controlable']),
+      ],
     },
     {
       id: 'd3-2',
@@ -184,6 +235,14 @@ const PLAN_3: WorkoutPlan = {
         ex('Curl martillo', 'Bíceps', 3, '10-12', '60s',
           'Agarre neutro.',
           ['Control']),
+      ],
+      alternatives: [
+        alt('d3-2-remo-mancuerna', 'Remo con mancuerna a una mano', 'Espalda', 3, '8-12', '90s',
+          'Lleva la mancuerna hacia la cadera con el torso estable.',
+          ['Tira con el codo', 'No gires el tronco']),
+        alt('d3-2-predicador', 'Curl en banco predicador', 'Bíceps', 3, '10-12', '60s',
+          'Flexiona el codo con el brazo apoyado en el banco.',
+          ['Sin impulso', 'Controla abajo']),
       ],
     },
     {
@@ -211,6 +270,14 @@ const PLAN_3: WorkoutPlan = {
           'Cuerpo en línea.',
           ['No hundas la cadera']),
       ],
+      alternatives: [
+        alt('d3-3-hip-thrust', 'Hip Thrust con barra', 'Glúteo', 4, '8-12', '120s',
+          'Eleva la cadera desde un banco empujando con los talones.',
+          ['Barbilla al pecho', 'Aprieta glúteos arriba']),
+        alt('d3-3-bulgara', 'Sentadilla búlgara', 'Pierna', 3, '10-12 por pierna', '90s',
+          'Pie trasero elevado y descenso controlado sobre la pierna delantera.',
+          ['Rodilla alineada', 'Torso estable']),
+      ],
     },
   ],
 };
@@ -233,6 +300,12 @@ const PLAN_5: WorkoutPlan = {
         ex('Aperturas en polea', 'Pecho', 3, '12-15', '60s', 'Abrazo amplio.', ['Estira la negativa']),
         ex('Pec-deck', 'Pecho', 3, '15', '60s', 'Aprieta en el centro.', ['Pausa 1s']),
       ],
+      alternatives: [
+        alt('d5-1-press-maquina', 'Press de pecho en máquina', 'Pecho', 3, '8-12', '90s',
+          'Empuja con la espalda apoyada y controla el retorno.', ['Escápulas estables', 'Recorrido cómodo']),
+        alt('d5-1-flexiones', 'Flexiones lastradas o lentas', 'Pecho', 3, '10-20', '60s',
+          'Baja el pecho entre las manos y empuja manteniendo el cuerpo en bloque.', ['Core firme', 'Codos a 45°']),
+      ],
     },
     {
       id: 'd5-2',
@@ -245,6 +318,12 @@ const PLAN_5: WorkoutPlan = {
         ex('Jalón al pecho', 'Espalda', 3, '10-12', '90s', 'Codos abajo.', ['Pecho alto']),
         ex('Remo en polea', 'Espalda', 3, '12-15', '75s', 'Al abdomen.', ['Estira al frente']),
         ex('Pullover en polea', 'Espalda', 3, '12-15', '60s', 'Brazos rectos hacia abajo.', ['Siente el dorsal']),
+      ],
+      alternatives: [
+        alt('d5-2-remo-mancuerna', 'Remo con mancuerna a una mano', 'Espalda', 3, '8-12', '90s',
+          'Lleva la mancuerna hacia la cadera.', ['Espalda neutra', 'Sin girar el torso']),
+        alt('d5-2-remo-maquina', 'Remo en máquina con pecho apoyado', 'Espalda', 3, '10-12', '75s',
+          'Tira de los agarres manteniendo el pecho contra el soporte.', ['Aprieta omóplatos', 'No encojas hombros']),
       ],
     },
     {
@@ -260,6 +339,12 @@ const PLAN_5: WorkoutPlan = {
         ex('Extensión cuádriceps', 'Pierna', 3, '12-15', '60s', 'Aprieta arriba.', ['Bajada lenta']),
         ex('Gemelos de pie', 'Pierna', 4, '12-20', '45s', 'Rango completo.', ['Pausa arriba']),
       ],
+      alternatives: [
+        alt('d5-3-hip-thrust', 'Hip Thrust con barra', 'Glúteo', 4, '8-12', '120s',
+          'Eleva la cadera desde un banco empujando con los talones.', ['Barbilla al pecho', 'Aprieta arriba']),
+        alt('d5-3-bulgara', 'Sentadilla búlgara', 'Pierna', 3, '10-12 por pierna', '90s',
+          'Baja sobre la pierna delantera con el pie trasero elevado.', ['Rodilla alineada', 'Torso estable']),
+      ],
     },
     {
       id: 'd5-4',
@@ -274,6 +359,12 @@ const PLAN_5: WorkoutPlan = {
         ex('Encogimientos (trapecio)', 'Hombro', 3, '12-15', '60s', 'Sube los hombros a las orejas.', ['Pausa arriba']),
         ex('Plancha abdominal', 'Core', 3, '45-60s', '45s', 'Cuerpo en línea.', ['No hundas cadera']),
       ],
+      alternatives: [
+        alt('d5-4-face-pull', 'Face pull en polea', 'Hombro', 3, '15-20', '60s',
+          'Tira de la cuerda hacia la cara separando las manos.', ['Codos altos', 'Aprieta atrás']),
+        alt('d5-4-elevacion-polea', 'Elevación lateral en polea', 'Hombro', 3, '12-15', '60s',
+          'Eleva el brazo desde la polea baja hasta la línea del hombro.', ['Sin balanceo', 'Control continuo']),
+      ],
     },
     {
       id: 'd5-5',
@@ -287,6 +378,12 @@ const PLAN_5: WorkoutPlan = {
         ex('Extensión tríceps polea', 'Tríceps', 3, '12-15', '60s', 'Codos pegados.', ['Aprieta abajo']),
         ex('Curl concentrado', 'Bíceps', 3, '12-15', '45s', 'Aísla el bíceps.', ['Pausa arriba']),
         ex('Crunch en polea', 'Core', 3, '15', '45s', 'Costillas a la cadera.', ['Sin tirón de cuello']),
+      ],
+      alternatives: [
+        alt('d5-5-curl-predicador', 'Curl en banco predicador', 'Bíceps', 3, '10-12', '60s',
+          'Flexiona el codo con el brazo apoyado.', ['Sin impulso', 'Bajada controlada']),
+        alt('d5-5-triceps-cuerda', 'Extensión de tríceps sobre cabeza', 'Tríceps', 3, '10-15', '60s',
+          'Extiende la cuerda por encima de la cabeza.', ['Codos fijos', 'Estira bien el tríceps']),
       ],
     },
   ],

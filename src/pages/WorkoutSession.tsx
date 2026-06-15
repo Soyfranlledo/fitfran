@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Check, Info, History, Timer, Trophy, RotateCcw } from 'lucide-react';
+import { Check, Info, History, Timer, Trophy, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Pill } from '../components/ui';
 import {
@@ -10,8 +10,8 @@ import {
   lastWeightFor,
 } from '../lib/store';
 import { PLANS } from '../data/workoutPlans';
-import { muscleColor, sessionProgress, estimatedMinutes } from '../lib/workout';
-import { isoDate, prettyDate, shortDate } from '../lib/date';
+import { muscleColor, sessionProgress, estimatedMinutesForExercises } from '../lib/workout';
+import { isoDate, shortDate } from '../lib/date';
 import type { Exercise } from '../types';
 
 function findDay(dayId: string) {
@@ -30,6 +30,8 @@ export function WorkoutSessionPage() {
 
   const sessions = useWorkout((s) => s.sessions);
   const ensureSession = useWorkout((s) => s.ensureSession);
+  const addExercise = useWorkout((s) => s.addExercise);
+  const removeExercise = useWorkout((s) => s.removeExercise);
   const completeSession = useWorkout((s) => s.completeSession);
   const resetSession = useWorkout((s) => s.resetSession);
 
@@ -54,13 +56,19 @@ export function WorkoutSessionPage() {
   }
 
   const { day } = found;
+  const allExercises = [...day.exercises, ...(day.alternatives ?? [])];
+  const selectedExercises = allExercises.filter((ex) => session?.logs[ex.id]);
+  const availableExercises = allExercises.filter((ex) => !session?.logs[ex.id]);
+  const estimated = estimatedMinutesForExercises(
+    selectedExercises.length ? selectedExercises : day.exercises
+  );
   const done = prog.total > 0 && prog.pct >= 1;
 
   return (
     <div className="animate-fade">
       <Header
         title={day.name}
-        subtitle={`${day.focus} · ≈ ${estimatedMinutes(day)} min`}
+        subtitle={`${day.focus} · ≈ ${estimated} min`}
         back
         right={
           <button
@@ -88,11 +96,59 @@ export function WorkoutSessionPage() {
           </span>
         </div>
 
+        <div className="flex items-end justify-between gap-3 px-1 mb-3">
+          <div>
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">
+              Ejercicios elegidos
+            </h2>
+            <p className="text-[12px] text-faint mt-1">Haz los que mejor encajen hoy.</p>
+          </div>
+          <Pill color="var(--color-accent)">{selectedExercises.length} activos</Pill>
+        </div>
+
         <div className="space-y-3">
-          {day.exercises.map((ex) => (
-            <ExerciseCard key={ex.id} ex={ex} sessionK={key} />
+          {selectedExercises.map((ex) => (
+            <ExerciseCard
+              key={ex.id}
+              ex={ex}
+              sessionK={key}
+              onRemove={() => {
+                const log = session?.logs[ex.id];
+                const hasData = log?.done || log?.sets.some((st) => st.done || st.weight > 0 || st.reps > 0);
+                if (
+                  !hasData ||
+                  confirm(`Ya has registrado datos en ${ex.name}. ¿Quieres quitarlo de la sesión de hoy?`)
+                ) {
+                  removeExercise(key, ex.id);
+                }
+              }}
+            />
           ))}
         </div>
+
+        {availableExercises.length > 0 && (
+          <section className="mt-6">
+            <div className="flex items-end justify-between gap-3 px-1 mb-3">
+              <div>
+                <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">
+                  Opciones disponibles
+                </h2>
+                <p className="text-[12px] text-faint mt-1">Añade una si una máquina está ocupada.</p>
+              </div>
+              <Pill>{availableExercises.length} opciones</Pill>
+            </div>
+            <div className="space-y-2.5">
+              {availableExercises.map((ex) => (
+                <AvailableExerciseCard
+                  key={ex.id}
+                  ex={ex}
+                  isAlternative={Boolean(day.alternatives?.some((altEx) => altEx.id === ex.id))}
+                  onAdd={() => addExercise(key, ex)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <button
           onClick={() => {
@@ -125,7 +181,15 @@ export function WorkoutSessionPage() {
   );
 }
 
-function ExerciseCard({ ex, sessionK }: { ex: Exercise; sessionK: string }) {
+function ExerciseCard({
+  ex,
+  sessionK,
+  onRemove,
+}: {
+  ex: Exercise;
+  sessionK: string;
+  onRemove: () => void;
+}) {
   const sessions = useWorkout((s) => s.sessions);
   const setField = useWorkout((s) => s.setField);
   const toggleSet = useWorkout((s) => s.toggleSet);
@@ -163,12 +227,21 @@ function ExerciseCard({ ex, sessionK }: { ex: Exercise; sessionK: string }) {
           </p>
         </button>
 
-        <Link
-          to={`/entreno/ejercicio/${ex.id}`}
-          className="grid place-items-center h-9 w-9 rounded-full bg-card-2 text-muted shrink-0 active:scale-95"
-        >
-          <Info size={17} />
-        </Link>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={onRemove}
+            className="grid place-items-center h-9 w-9 rounded-full bg-card-2 text-faint active:scale-95 active:text-danger"
+            aria-label={`Quitar ${ex.name}`}
+          >
+            <Minus size={17} />
+          </button>
+          <Link
+            to={`/entreno/ejercicio/${ex.id}`}
+            className="grid place-items-center h-9 w-9 rounded-full bg-card-2 text-muted active:scale-95"
+          >
+            <Info size={17} />
+          </Link>
+        </div>
       </div>
 
       {/* Registro de series */}
@@ -233,6 +306,48 @@ function ExerciseCard({ ex, sessionK }: { ex: Exercise; sessionK: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function AvailableExerciseCard({
+  ex,
+  isAlternative,
+  onAdd,
+}: {
+  ex: Exercise;
+  isAlternative: boolean;
+  onAdd: () => void;
+}) {
+  const color = muscleColor[ex.muscle] ?? '#b6f23e';
+
+  return (
+    <div className="rounded-3xl border border-line bg-card/70 p-3.5 flex items-center gap-3">
+      <button
+        onClick={onAdd}
+        className="grid place-items-center h-11 w-11 rounded-2xl shrink-0 bg-accent text-ink active:scale-95"
+        aria-label={`Añadir ${ex.name}`}
+      >
+        <Plus size={21} strokeWidth={2.75} />
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="text-[11px] font-semibold text-faint uppercase tracking-wide">
+            {ex.muscle} · {isAlternative ? 'Alternativa' : 'Quitado'}
+          </span>
+        </div>
+        <h3 className="font-bold leading-tight truncate">{ex.name}</h3>
+        <p className="text-[13px] text-muted mt-0.5">
+          {ex.sets} × {ex.reps} · descanso {ex.rest}
+        </p>
+      </div>
+      <Link
+        to={`/entreno/ejercicio/${ex.id}`}
+        className="grid place-items-center h-9 w-9 rounded-full bg-card-2 text-muted shrink-0 active:scale-95"
+      >
+        <Info size={17} />
+      </Link>
     </div>
   );
 }
