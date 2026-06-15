@@ -98,9 +98,10 @@ ejecucion mediante stores persistidos.
 ### Logica y estado
 
 - `src/lib/store.ts`: todos los stores Zustand, persistencia y backup.
-- `src/lib/workout.ts`: plan efectivo, progreso, duracion y colores musculares.
+- `src/lib/workout.ts`: plan efectivo, progreso, completado, duracion y colores.
 - `src/lib/nutrition.ts`: calculadora de calorias y macros.
 - `src/lib/date.ts`: fechas locales y dias de la semana.
+- `src/lib/cloud.ts`: sincronizacion del backup con un Gist privado de GitHub.
 
 Los contratos compartidos viven en `src/types.ts`.
 
@@ -143,6 +144,26 @@ factor de actividad y porcentaje de ajuste; reparte macros con proteina de
 - Cada push a `main` construye `dist/` y lo publica con GitHub Pages.
 
 Consulta `WORKFLOW.md` antes de afirmar que una version esta desplegada.
+
+## Sincronizacion en la nube
+
+`src/lib/cloud.ts` mantiene el mismo backup en todos los dispositivos sin
+backend propio:
+
+- Almacen: un Gist privado de GitHub del usuario, archivo `fitfran-backup.json`.
+- Autenticacion: un token de GitHub (permiso solo `gist`) guardado en
+  `localStorage` (clave `fitfran-cloud`), una vez por dispositivo. No usa
+  ninguna dependencia nueva; habla con `api.github.com` por `fetch`.
+- Flujo: al cambiar datos sube (con debounce); al volver a la app baja; en
+  ambos casos hace pull, fusiona y push. La fusion nunca pierde datos
+  ("informacion maxima"), detallada en `DATA_STORAGE.md`.
+- Estado para la UI: un pequeño pub/sub propio (`subscribeCloud`/`getCloud`)
+  que la tarjeta de Ajustes consume con `useSyncExternalStore`.
+- Arranque: `initCloudSync()` se llama desde `main.tsx`; si no hay token, no
+  hace nada.
+
+Decision y alternativas (incluido por que no Supabase) en
+`docs/decisions/0003-cloud-sync.md`.
 
 ## Criterios de diseño
 

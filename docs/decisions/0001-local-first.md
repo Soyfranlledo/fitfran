@@ -1,7 +1,13 @@
 # 0001 - Aplicacion local-first sin backend
 
-- Estado: aceptada
+- Estado: aceptada (matizada por 0003)
 - Fecha: 14 de junio de 2026
+
+> Actualizacion (15 jun 2026): sigue siendo local-first y offline. La
+> sincronizacion opcional en la nube (un Gist privado del usuario, sin backend
+> propio) responde a la consecuencia negativa "los datos no se sincronizan" y
+> respeta la regla de preservar el uso offline. Ver
+> [0003 - Sincronizacion en la nube](0003-cloud-sync.md).
 
 ## Contexto
 

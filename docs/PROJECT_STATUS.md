@@ -11,7 +11,8 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 - Produccion: <https://soyfranlledo.github.io/fitfran/>
 - Repositorio: <https://github.com/Soyfranlledo/fitfran>
 - Rama de produccion: `main`
-- Ultimo cambio funcional desplegado: `452859d`
+- Ultimo cambio funcional desplegado: `1bf9b84` (arreglo de finalizar entreno).
+- Sincronizacion en la nube desplegada en `0f2158d`.
 
 ## Funcionalidad disponible
 
@@ -55,12 +56,47 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 ### Ajustes y seguridad de datos
 
 - Perfil y numero de dias de entrenamiento editables.
+- Sincronizacion en la nube con un Gist privado de GitHub: los mismos datos en
+  todos los dispositivos y navegadores, conectando con un token (permiso solo
+  `gist`) una vez por dispositivo.
 - Exportacion e importacion de una copia JSON.
 - Restauracion del menu por defecto.
 - Borrado completo bajo confirmacion.
 - Instalacion como PWA y uso offline tras cargar la aplicacion.
 
 ## Ultimo trabajo realizado
+
+### Sincronizacion en la nube
+
+Problema observado: el 15 de junio un entreno registrado en el iPhone dejo de
+verse tras actualizar la app. Causa real: en iOS, Safari y la app instalada (y
+cada navegador) tienen almacenes `localStorage` separados; se registro en un
+"cajon" y se miro en otro. La unica copia era la exportacion manual.
+
+Solucion desplegada (`src/lib/cloud.ts`):
+
+- todo el backup se guarda en un Gist privado de GitHub del propio usuario;
+- el token se guarda solo en el dispositivo (clave `fitfran-cloud`), nunca se
+  sube al Gist ni entra en la exportacion;
+- sube al guardar un cambio (con un respiro) y baja al volver a la app;
+- la fusion usa la regla "informacion maxima": al unir lo local con lo remoto,
+  un registro vacio nunca pisa uno con datos reales;
+- UI en Ajustes -> Sincronizacion en la nube (conectar, estado, sincronizar,
+  desconectar).
+
+Se valoro Supabase y se descarto para este caso. Ver
+`docs/decisions/0003-cloud-sync.md`.
+
+### Arreglo: finalizar entreno con ejercicios intercambiados
+
+Problema observado: al cambiar un ejercicio por una alternativa, la sesion se
+quedaba a medias (p. ej. 6/7) y "Finalizar entreno" no dejaba rastro visible.
+
+Causa: "completado" se decidia solo por el progreso (`pct >= 1`) e ignoraba el
+`completedAt` que si se guardaba. Ahora `isSessionComplete()` considera una
+sesion completada cuando el usuario la finaliza (`completedAt`), y `Today` y la
+pantalla de sesion lo reflejan de forma coherente. El historial ya lo usaba
+bien. Ver `docs/decisions/0004-workout-completion.md`.
 
 ### Ejercicios alternativos por sesion
 
@@ -108,11 +144,14 @@ Las alternativas nuevas ya tienen IDs explicitos y estables. Una mejora futura
 recomendada es migrar todos los ejercicios principales a IDs semanticos y
 estables, con compatibilidad para el historial actual.
 
-### Persistencia solo local
+### Persistencia local y cajones de iOS
 
-Los datos dependen de `localStorage`. Borrar datos de Safari, cambiar de
-dispositivo o reinstalar sin copia puede perder el historial. La exportacion
-manual es hoy la unica copia de seguridad.
+Los datos viven en `localStorage`, que en iOS esta separado por navegador y por
+la app instalada (cada uno es un "cajon" independiente). La sincronizacion en la
+nube une todos esos cajones en un Gist comun y es la defensa principal contra la
+perdida de datos. Sigue siendo necesario conectar el token en cada cajon que se
+use; un cajon sin conectar no se respalda. La exportacion manual continua como
+copia adicional.
 
 ### Cache de la PWA
 
@@ -129,10 +168,11 @@ validarse con build y una comprobacion manual del flujo afectado.
 
 No hay una tarea comprometida en curso. Las opciones con mas valor tecnico son:
 
-- estabilizar los IDs de todos los ejercicios;
-- añadir tests para stores, calculadora y seleccion de ejercicios;
+- estabilizar los IDs de todos los ejercicios (pendiente acordado con el
+  usuario; ver "IDs de ejercicios principales");
+- añadir tests para stores, calculadora, seleccion de ejercicios y fusion de
+  sincronizacion;
 - permitir elegir una alternativa como reemplazo directo en una sola accion;
-- ofrecer sincronizacion o copia automatica fuera del dispositivo;
 - mostrar una señal de version nueva disponible en la PWA.
 
 Estas ideas no deben implementarse sin confirmar prioridad con el usuario.

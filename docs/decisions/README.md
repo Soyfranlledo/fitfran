@@ -8,6 +8,8 @@ conservar el motivo de la eleccion.
 
 - [0001 - Aplicacion local-first sin backend](0001-local-first.md)
 - [0002 - Seleccion de ejercicios dentro de cada sesion](0002-session-exercise-selection.md)
+- [0003 - Sincronizacion en la nube con un Gist privado de GitHub](0003-cloud-sync.md)
+- [0004 - El completado de una sesion lo marca completedAt](0004-workout-completion.md)
 
 ## Formato
 

@@ -19,7 +19,17 @@ Las versiones y migraciones de cada store determinan ese comportamiento.
 | `fitfran-menu` | Menu semanal editado | 3 |
 | `fitfran-plan` | Reasignaciones de dias | sin version explicita |
 
-Las cinco claves se incluyen en la exportacion de backup.
+Las cinco claves se incluyen en la exportacion de backup (`BACKUP_KEYS`, ahora
+exportado desde `store.ts`).
+
+Existe ademas una clave de configuracion local de la nube:
+
+| Clave | Contenido | Sincronizada |
+| --- | --- | --- |
+| `fitfran-cloud` | Token de GitHub, `gistId`, `lastSync`, `lastChange` | No |
+
+`fitfran-cloud` no esta en `BACKUP_KEYS`: el token vive solo en el dispositivo,
+no se sube al Gist ni aparece en la exportacion JSON.
 
 ## Contratos principales
 
@@ -143,6 +153,31 @@ Al añadir un store persistido nuevo:
 2. actualiza este documento;
 3. prueba exportacion e importacion;
 4. decide si el formato global `_version` necesita subir.
+
+## Sincronizacion en la nube
+
+`src/lib/cloud.ts` sincroniza el mismo backup (las cinco `BACKUP_KEYS`) con un
+Gist privado de GitHub. Puntos clave para futuros cambios:
+
+- La fusion (`mergeBackups`) sigue la regla "informacion maxima": al unir lo
+  local con lo remoto, un registro vacio nunca pisa uno con datos reales. Para
+  series compara una puntuacion `done > peso > reps` y conserva la mas completa;
+  entrenos y entradas de salud se unen por clave/fecha sin perder ninguno.
+- Ajustes y menu (preferencias) se resuelven por el mas reciente segun
+  `_meta.updatedAt`, que toma `fitfran-cloud.lastChange` (ultimo cambio real del
+  usuario en ese dispositivo), no la hora de sincronizar.
+- Al recibir datos remotos se escriben en `localStorage` y se llama a
+  `persist.rehydrate()` de cada store; no hace falta recargar la pagina.
+- Cualquier store persistido nuevo debe añadirse a `BACKUP_KEYS` para entrar
+  tanto en la exportacion como en la sincronizacion.
+
+## Completado de una sesion
+
+`completedAt` es la fuente de verdad de "entreno finalizado". `isSessionComplete`
+(`src/lib/workout.ts`) lo considera completado si hay `completedAt` o si todos
+los logs activos estan marcados. No volver a decidir el completado solo por el
+progreso: al intercambiar un ejercicio la sesion puede quedar a 6/7 y aun asi
+estar finalizada. Ver `docs/decisions/0004-workout-completion.md`.
 
 ## Datos de salud
 
