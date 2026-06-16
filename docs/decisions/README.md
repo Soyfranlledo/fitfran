@@ -10,6 +10,7 @@ conservar el motivo de la eleccion.
 - [0002 - Seleccion de ejercicios dentro de cada sesion](0002-session-exercise-selection.md)
 - [0003 - Sincronizacion en la nube con un Gist privado de GitHub](0003-cloud-sync.md)
 - [0004 - El completado de una sesion lo marca completedAt](0004-workout-completion.md)
+- [0005 - IDs de ejercicio explicitos y permanentes](0005-stable-exercise-ids.md)
 
 ## Formato
 

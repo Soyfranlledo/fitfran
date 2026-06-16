@@ -133,16 +133,16 @@ Caso validado en la sesion de pierna:
 
 ## Riesgos y deuda conocida
 
-### IDs de ejercicios principales
+### IDs de ejercicios (resuelto)
 
-Los ejercicios principales se crean con un contador global (`e0`, `e1`, etc.)
-en `src/data/workoutPlans.ts`. Insertar, borrar o reordenar ejercicios antes de
-otros cambia IDs posteriores y puede separar el historial existente de su
-ejercicio.
-
-Las alternativas nuevas ya tienen IDs explicitos y estables. Una mejora futura
-recomendada es migrar todos los ejercicios principales a IDs semanticos y
-estables, con compatibilidad para el historial actual.
+Los ejercicios principales usaban un contador global, por lo que insertar o
+reordenar desplazaba IDs posteriores y podia separar el historial. Desde el
+16 de junio de 2026 los IDs son **explicitos y permanentes** (mismos valores
+`e0`, `e1`, etc., sin migracion) en `src/data/workoutPlans.ts`, asi que
+reordenar o insertar ya no afecta a otros. Una guarda de desarrollo avisa por
+consola si dos ejercicios comparten ID. Al añadir un ejercicio nuevo hay que
+asignarle un ID no usado; cambiar o reutilizar un ID existente seguiria
+requiriendo migracion. Ver `docs/decisions/0005-stable-exercise-ids.md`.
 
 ### Persistencia local y cajones de iOS
 
@@ -168,8 +168,6 @@ validarse con build y una comprobacion manual del flujo afectado.
 
 No hay una tarea comprometida en curso. Las opciones con mas valor tecnico son:
 
-- estabilizar los IDs de todos los ejercicios (pendiente acordado con el
-  usuario; ver "IDs de ejercicios principales");
 - añadir tests para stores, calculadora, seleccion de ejercicios y fusion de
   sincronizacion;
 - permitir elegir una alternativa como reemplazo directo en una sola accion;

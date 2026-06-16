@@ -99,13 +99,19 @@ Consecuencias:
 Cambiar el ID rompe la continuidad visible del historial aunque los datos sigan
 existiendo bajo el ID anterior.
 
-### Riesgo actual de IDs
+### IDs de ejercicios
 
-Los principales usan un contador global en `workoutPlans.ts`. Su ID depende del
-orden de construccion. No insertes ni reordenes ejercicios principales sin
-estudiar una migracion.
+Todos los IDs son ahora **explicitos y permanentes** en `workoutPlans.ts`: los
+principales como `e0`, `e1`, etc., y las alternativas como `alt-d4-3-hip-thrust`.
+Ya no dependen del orden del fichero, asi que insertar o reordenar ejercicios no
+afecta al historial existente.
 
-Las alternativas usan IDs explicitos como `alt-d4-3-hip-thrust` y son estables.
+Reglas al editar:
+
+- al añadir un ejercicio, asignale un ID nuevo que no se use en ningun plan;
+- no cambies ni reutilices un ID existente sin una migracion (un ID conecta
+  plan, sesion, ultimo peso e historial);
+- una guarda en modo desarrollo avisa por consola si hay IDs duplicados.
 
 ## Settings y migracion
 

@@ -32,8 +32,9 @@ documentacion en la misma sesion.
 - Los datos del usuario viven en `localStorage`; no hay servidor ni cuenta.
 - No borres, reinicies ni migres datos persistidos sin estudiar antes
   `docs/DATA_STORAGE.md`.
-- Los IDs de ejercicios forman parte del historial. No los cambies sin una
-  migracion.
+- Los IDs de ejercicios son explicitos y forman parte del historial. Al añadir
+  uno, asigna un ID nuevo sin reutilizar; no cambies ni reordenes IDs
+  existentes sin una migracion.
 - Mantener el estilo visual actual: oscuro, compacto, tactil y optimizado para
   una anchura maxima de `md`.
 - Reutiliza los stores, componentes y helpers existentes antes de crear nuevas

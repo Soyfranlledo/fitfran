@@ -64,6 +64,8 @@ Negativas:
 ## Salvaguardas
 
 - La interfaz confirma antes de quitar un ejercicio con datos.
-- Las alternativas tienen IDs semanticos explicitos.
+- Todos los ejercicios tienen IDs explicitos y estables; la condicion "todos los
+  IDs deben ser estables" se resolvio en
+  [0005](0005-stable-exercise-ids.md).
 - `DATA_STORAGE.md` documenta el contrato para evitar que futuros cambios
   interpreten `logs` como un simple contenedor pasivo.
