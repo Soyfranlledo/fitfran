@@ -18,18 +18,21 @@ Las versiones y migraciones de cada store determinan ese comportamiento.
 | `fitfran-health` | Peso, grasa, pasos y sueño | sin version explicita |
 | `fitfran-menu` | Menu semanal editado | 3 |
 | `fitfran-plan` | Reasignaciones de dias | sin version explicita |
+| `fitfran-foodlog` | Diario de comidas real por dia | sin version explicita |
+| `fitfran-library` | Ejercicios creados por el usuario | sin version explicita |
 
-Las cinco claves se incluyen en la exportacion de backup (`BACKUP_KEYS`, ahora
+Las siete claves se incluyen en la exportacion de backup (`BACKUP_KEYS`,
 exportado desde `store.ts`).
 
-Existe ademas una clave de configuracion local de la nube:
+Existen ademas claves de configuracion local que NO se sincronizan:
 
 | Clave | Contenido | Sincronizada |
 | --- | --- | --- |
 | `fitfran-cloud` | Token de GitHub, `gistId`, `lastSync`, `lastChange` | No |
+| `fitfran-ai` | Clave de OpenAI del asistente de nutricion | No |
 
-`fitfran-cloud` no esta en `BACKUP_KEYS`: el token vive solo en el dispositivo,
-no se sube al Gist ni aparece en la exportacion JSON.
+Ni `fitfran-cloud` ni `fitfran-ai` estan en `BACKUP_KEYS`: las claves viven solo
+en el dispositivo, no se suben al Gist ni aparecen en la exportacion JSON.
 
 ## Contratos principales
 
@@ -47,11 +50,17 @@ interface Exercise {
   rest: string;
   how: string;
   cues: string[];
+  load?: LoadType; // 'barra' | 'mancuerna' | 'polea' | 'maquina' | 'corporal'
 }
 ```
 
 El `id` conecta plan, sesion, ultimo peso e historial. Es un identificador
 persistente, no un detalle visual.
+
+`load` es opcional y compatible hacia atras: el catalogo y los ejercicios creados
+a mano lo declaran; los de los planes base se infieren por el nombre con `loadOf`
+(`workout.ts`). Determina si el peso registrado es por mancuerna o total; no
+afecta a la persistencia.
 
 ### Dia de entrenamiento
 
@@ -106,12 +115,51 @@ principales como `e0`, `e1`, etc., y las alternativas como `alt-d4-3-hip-thrust`
 Ya no dependen del orden del fichero, asi que insertar o reordenar ejercicios no
 afecta al historial existente.
 
+Hay tres espacios de IDs, sin colisiones entre si:
+
+- planes: `e0`, `e1`, … y alternativas `alt-...` (`workoutPlans.ts`);
+- catalogo del buscador: `cat-...` (`exerciseCatalog.ts`);
+- ejercicios creados por el usuario: `user-...` (`useLibrary`, generados con
+  `newCustomExerciseId`).
+
+`findExerciseById` (`store.ts`) resuelve cualquiera de los tres para el detalle
+y el historial.
+
 Reglas al editar:
 
-- al añadir un ejercicio, asignale un ID nuevo que no se use en ningun plan;
+- al añadir un ejercicio, asignale un ID nuevo que no se use en ningun plan ni
+  catalogo;
 - no cambies ni reutilices un ID existente sin una migracion (un ID conecta
   plan, sesion, ultimo peso e historial);
-- una guarda en modo desarrollo avisa por consola si hay IDs duplicados.
+- una guarda en modo desarrollo avisa por consola si hay IDs duplicados (planes
+  y catalogo).
+
+## Diario de comidas
+
+`fitfran-foodlog` (store `useFoodLog`) guarda lo que el usuario come de verdad,
+aparte del menu/plan.
+
+```ts
+interface FoodLogItem {
+  name: string;
+  qty?: string;
+  kcal: number; protein: number; carbs: number; fat: number;
+}
+interface FoodLogEntry {
+  id: string;        // 'f-...'
+  date: string;      // YYYY-MM-DD local
+  time?: string;
+  title?: string;
+  items: FoodLogItem[];
+  kcal: number; protein: number; carbs: number; fat: number; // totales
+  source: 'voz' | 'manual';
+}
+```
+
+Estructura del store: `entries: Record<string, FoodLogEntry[]>` indexado por
+fecha. Los totales de cada entrada se calculan de sus items al guardar
+(`sumItems`). `Today` muestra el diario del dia si hay entradas; si no, cae al
+menu como referencia.
 
 ## Settings y migracion
 
@@ -174,8 +222,12 @@ Gist privado de GitHub. Puntos clave para futuros cambios:
   usuario en ese dispositivo), no la hora de sincronizar.
 - Al recibir datos remotos se escriben en `localStorage` y se llama a
   `persist.rehydrate()` de cada store; no hace falta recargar la pagina.
-- Cualquier store persistido nuevo debe añadirse a `BACKUP_KEYS` para entrar
-  tanto en la exportacion como en la sincronizacion.
+- Cualquier store persistido nuevo debe añadirse a `BACKUP_KEYS` **y** a
+  `mergeBackups` (`cloud.ts`), que fusiona clave por clave de forma explicita: si
+  no se añade su rama de fusion, el dato no sobreviviria a una sincronizacion.
+- `fitfran-foodlog`: union por fecha y, dentro de cada dia, por `id` de entrada
+  (nunca se pierde una comida registrada en otro cajon).
+- `fitfran-library`: union por `id` de ejercicio creado por el usuario.
 
 ## Completado de una sesion
 

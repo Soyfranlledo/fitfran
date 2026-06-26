@@ -90,6 +90,8 @@ de usuario se resuelve en esta capa.
 ### Datos base
 
 - `src/data/workoutPlans.ts`: rutinas de 3, 4 y 5 dias, tecnica y alternativas.
+- `src/data/exerciseCatalog.ts`: catalogo de ejercicios de gimnasio en espanol
+  para el buscador (IDs `cat-...`).
 - `src/data/weeklyMenu.ts`: menu semanal inicial y calculo de totales.
 
 Estos datos son codigo versionado. El usuario puede modificar parte de ellos en
@@ -97,9 +99,15 @@ ejecucion mediante stores persistidos.
 
 ### Logica y estado
 
-- `src/lib/store.ts`: todos los stores Zustand, persistencia y backup.
-- `src/lib/workout.ts`: plan efectivo, progreso, completado, duracion y colores.
+- `src/lib/store.ts`: todos los stores Zustand, persistencia y backup. Incluye
+  `useWorkout` (con series extra), `useLibrary` (ejercicios propios), `useFoodLog`
+  (diario de comidas) y el resolver `findExerciseById`.
+- `src/lib/workout.ts`: plan efectivo, progreso, completado, duracion, colores,
+  tipo de carga (`loadOf`) y progreso por ejercicio (`epley1RM`,
+  `exerciseProgress`).
 - `src/lib/nutrition.ts`: calculadora de calorias y macros.
+- `src/lib/ai.ts`: asistente de nutricion con OpenAI (clave en el dispositivo,
+  transcripcion de audio y desglose de comidas en kcal/macros).
 - `src/lib/date.ts`: fechas locales y dias de la semana.
 - `src/lib/cloud.ts`: sincronizacion del backup con un Gist privado de GitHub.
 
@@ -134,6 +142,20 @@ El menu base se carga desde `DEFAULT_MENU`. Las ediciones sustituyen la comida
 correspondiente en el store persistido. La calculadora usa Mifflin-St Jeor,
 factor de actividad y porcentaje de ajuste; reparte macros con proteina de
 `2 g/kg`, grasa de `0.8 g/kg` y carbohidratos para completar calorias.
+
+La pantalla de Nutricion tiene dos pestañas: "Mi dia" (diario real, `useFoodLog`)
+y "Menu" (el plan). El diario suma lo comido y lo compara con los objetivos.
+
+### Registro por voz (IA)
+
+`src/lib/ai.ts` habla directamente con OpenAI por `fetch` (sin backend; CORS
+permitido). Flujo: `MediaRecorder` graba el audio →
+`transcribeAudio` (`/v1/audio/transcriptions`) lo pasa a texto →
+`analyzeMeal` (`/v1/chat/completions`, `gpt-4o-mini`, salida JSON) lo desglosa en
+items con kcal y macros. El resultado es editable y se guarda en `useFoodLog`. La
+clave vive solo en el dispositivo (`fitfran-ai`), con un pub/sub propio
+(`subscribeAI`/`getAI`) que consume la tarjeta de Ajustes. Tambien hay entrada
+manual de texto, que salta la transcripcion.
 
 ## PWA y despliegue
 

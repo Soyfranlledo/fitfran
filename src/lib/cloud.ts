@@ -17,6 +17,8 @@ import {
   useHealth,
   useMenu,
   usePlan,
+  useFoodLog,
+  useLibrary,
 } from './store';
 
 const API = 'https://api.github.com';
@@ -145,6 +147,8 @@ function applyBackup(obj: Backup) {
   useHealth.persist.rehydrate();
   useMenu.persist.rehydrate();
   usePlan.persist.rehydrate();
+  useFoodLog.persist.rehydrate();
+  useLibrary.persist.rehydrate();
   // Suelta el guard tras el ciclo de rehidratación para no auto-disparar push.
   setTimeout(() => {
     applyingRemote = false;
@@ -211,6 +215,25 @@ function mergeHealthState(a: any = {}, b: any = {}) {
   }
   return { ...a, ...b, entries };
 }
+function mergeFoodLogState(a: any = {}, b: any = {}) {
+  const entries: Record<string, any[]> = {};
+  const dates = new Set([
+    ...Object.keys(a.entries || {}),
+    ...Object.keys(b.entries || {}),
+  ]);
+  for (const d of dates) {
+    // Unión por id: nunca se pierde una comida registrada en ningún cajón.
+    const byId = new Map<string, any>();
+    for (const e of a.entries?.[d] ?? []) byId.set(e.id, e);
+    for (const e of b.entries?.[d] ?? []) if (!byId.has(e.id)) byId.set(e.id, e);
+    entries[d] = [...byId.values()];
+  }
+  return { ...a, ...b, entries };
+}
+function mergeLibraryState(a: any = {}, b: any = {}) {
+  // Unión por id de ejercicio creado por el usuario.
+  return { ...a, ...b, exercises: { ...(a.exercises || {}), ...(b.exercises || {}) } };
+}
 function mergeStateKey(
   a: any,
   b: any,
@@ -263,6 +286,18 @@ export function mergeBackups(a: Backup | null, b: Backup | null): Backup {
       for (const [k, v] of Object.entries(newerWO)) wo[k] = v as number;
       return { ...x, ...y, weekdayOverride: wo };
     }
+  );
+
+  // Diario de comidas y biblioteca: unión "información máxima" por id.
+  out['fitfran-foodlog'] = mergeStateKey(
+    a['fitfran-foodlog'],
+    b['fitfran-foodlog'],
+    mergeFoodLogState
+  );
+  out['fitfran-library'] = mergeStateKey(
+    a['fitfran-library'],
+    b['fitfran-library'],
+    mergeLibraryState
   );
 
   // Ajustes y menú: preferencias del usuario → manda la copia más reciente.
@@ -447,6 +482,8 @@ export function initCloudSync() {
   useHealth.subscribe(scheduleSync);
   useMenu.subscribe(scheduleSync);
   usePlan.subscribe(scheduleSync);
+  useFoodLog.subscribe(scheduleSync);
+  useLibrary.subscribe(scheduleSync);
 
   // Al volver a la app, baja por si otro dispositivo escribió.
   const onVisible = () => {

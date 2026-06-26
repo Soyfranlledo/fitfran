@@ -3,6 +3,39 @@
 Los cambios visibles para el usuario se documentan aqui. Las decisiones
 tecnicas de fondo viven en `docs/decisions/`.
 
+## 26 de junio de 2026
+
+### Entreno
+
+- **Series extra**: durante la sesion puedes añadir o quitar series de un
+  ejercicio (p. ej. hacer una cuarta serie sobre la marcha).
+- **Biblioteca de ejercicios**: nuevo boton "Añadir ejercicio" con buscador
+  sobre un catalogo de gimnasio en espanol (~105 ejercicios) y la opcion de
+  crear el tuyo a mano. El añadido se registra y guarda historial igual que uno
+  del plan.
+- **Mancuerna vs peso total**: cada ejercicio indica su tipo de carga (barra,
+  mancuerna, polea, maquina o peso corporal). En mancuerna la casilla se etiqueta
+  "Mancuerna" para que anotes el peso de una; en el resto, el peso total.
+- **Progreso real por ejercicio**: en la ficha de cada ejercicio ves la fuerza
+  estimada (1RM por la formula de Epley, que combina peso y reps), el volumen y
+  una tabla por fecha o por semana.
+
+### Nutricion
+
+- **Mi dia**: nuevo diario para registrar lo que comes de verdad (aparte del
+  menu), con suma de kcal y macros frente a tus objetivos.
+- **Registro por voz**: dictas lo que has comido con cantidades y la app lo
+  desglosa en alimentos con calorias y macros (editable antes de guardar).
+  Tambien puedes escribirlo a mano.
+- Requiere una clave de OpenAI que se guarda solo en tu dispositivo (Ajustes ->
+  Asistente de nutricion). Coste de centimos por comida; el texto/audio se envia
+  a OpenAI solo para el calculo.
+
+### Datos
+
+- El diario de comidas y tu biblioteca de ejercicios se incluyen en la copia de
+  seguridad y en la sincronizacion en la nube, sin perder informacion al fusionar.
+
 ## 15 de junio de 2026
 
 ### Arreglo: finalizar entreno con ejercicios intercambiados

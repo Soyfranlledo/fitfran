@@ -9,8 +9,8 @@ Tu app personal de **entrenamiento y nutrición**. Minimalista, mobile-first y p
 ## Qué incluye
 
 - **Hoy** — resumen del día: entreno, nutrición y salud de un vistazo.
-- **Entreno** — rutina de **3, 4 o 5 días** (por defecto 4). Cada sesión incluye ejercicios principales y **alternativas que puedes añadir o quitar según las máquinas disponibles**, todas con registro de pesos y repeticiones serie a serie. Ficha de cada ejercicio con técnica, consejos y tu progreso (gráfica de cargas).
-- **Nutrición** — **menú semanal y diario** editable, con calorías y macros por comida. Ajusta tus objetivos: **calorías, % de grasa y macros (proteína / carbos / grasa)**.
+- **Entreno** — rutina de **3, 4 o 5 días** (por defecto 4). Cada sesión incluye ejercicios principales y **alternativas que puedes añadir o quitar según las máquinas disponibles**, con registro de pesos y repeticiones serie a serie y la opción de **añadir series extra** sobre la marcha. **Biblioteca de ejercicios** con buscador (catálogo en español) para añadir cualquier ejercicio o **crear el tuyo**. Cada ejercicio distingue **mancuerna vs peso total**. Ficha con técnica, consejos y tu **progreso real**: fuerza estimada (1RM de Epley), volumen y tabla por fecha o semana.
+- **Nutrición** — dos pestañas: **Mi día** (registra lo que comes de verdad, **por voz**, y lo compara con tus objetivos) y **Menú** (plan semanal y diario editable, con calorías y macros por comida). Ajusta tus objetivos: **calorías, % de grasa y macros (proteína / carbos / grasa)**.
 - **Salud** — registra **peso, % grasa, pasos y sueño** con gráficas de evolución. Importación desde **Apple Salud** mediante un Atajo (ver abajo).
 - **Sincronización en la nube** — opcional. Guarda tus datos en un **Gist privado de tu GitHub** para tenerlos iguales en el móvil y el ordenador, en Safari y en la app instalada, y que sobrevivan a las actualizaciones (ver abajo).
 
@@ -49,6 +49,29 @@ Notas:
 - El token se guarda **solo en tu dispositivo** (no se sube al Gist ni a la copia JSON) y da permiso únicamente a `gists`. Puedes revocarlo cuando quieras desde GitHub.
 - La fusión nunca pierde datos: al unir dispositivos, un registro vacío no pisa uno con datos reales.
 
+## Registro de comidas por voz (IA)
+
+En **Nutrición → Mi día** puedes registrar lo que comes dictándolo: tocas el
+micrófono, dices algo como «dos huevos, 60 g de avena y un plátano», y la app lo
+**transcribe y desglosa en alimentos con calorías y macros** (editable antes de
+guardar). También puedes escribirlo a mano.
+
+Esto usa **OpenAI** con una clave tuya, que se guarda **solo en tu dispositivo**
+(no se sube a la nube ni a la copia). Para activarlo, en **Ajustes → Asistente de
+nutrición (IA)**:
+
+1. Crea una clave en [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+2. Pégala en la app y guárdala.
+3. Conviene ponerle un **límite de gasto** en tu cuenta de OpenAI. El coste por
+   comida es de céntimos.
+
+Notas:
+
+- La grabación del micrófono necesita **HTTPS**: funciona en la app instalada y
+  en la URL publicada, no en `http://` de la red local.
+- El texto/audio de la comida se envía a OpenAI solo para calcular los macros.
+- Sin clave, el diario sigue funcionando con entrada manual.
+
 ## Conectar con Apple Salud
 
 Por seguridad, una web **no puede** leer Apple Salud directamente (eso solo lo hace una app nativa). La forma sencilla y sin cuenta de desarrollador:
@@ -69,6 +92,7 @@ También puedes meter los datos a mano con el botón **＋** (rápido desde el m
 ## Personalizar
 
 - **Rutinas** → `src/data/workoutPlans.ts` (ejercicios, series, reps, técnica).
+- **Catálogo de ejercicios** → `src/data/exerciseCatalog.ts` (los del buscador).
 - **Menú** → `src/data/weeklyMenu.ts` (o edítalo desde la propia app, comida a comida).
 - **Colores / estilo** → `src/index.css` (variables de tema).
 

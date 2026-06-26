@@ -1,9 +1,10 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
-import { User, CalendarRange, RefreshCw, Trash2, Share, Info, Download, Upload, DatabaseBackup, Cloud, CloudOff, Link2, LogOut, Check } from 'lucide-react';
+import { User, CalendarRange, RefreshCw, Trash2, Share, Info, Download, Upload, DatabaseBackup, Cloud, CloudOff, Link2, LogOut, Check, Sparkles, KeyRound } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Card, SectionTitle, Segmented } from '../components/ui';
 import { useMenu, useSettings, exportData, importData } from '../lib/store';
 import { subscribeCloud, getCloud, connectCloud, disconnectCloud, syncNow } from '../lib/cloud';
+import { subscribeAI, getAI, setAIKey, clearAIKey, verifyAIKey } from '../lib/ai';
 import { isoDate } from '../lib/date';
 
 export function Settings() {
@@ -163,6 +164,9 @@ export function Settings() {
         {/* Sincronización en la nube */}
         <CloudCard />
 
+        {/* Asistente de nutrición (IA) */}
+        <AICard />
+
         {/* Copia de seguridad */}
         <div>
           <SectionTitle>Copia de seguridad</SectionTitle>
@@ -270,6 +274,107 @@ function relTime(iso?: string): string {
   const h = Math.round(m / 60);
   if (h < 24) return `hace ${h} h`;
   return `hace ${Math.round(h / 24)} d`;
+}
+
+function AICard() {
+  const ai = useSyncExternalStore(subscribeAI, getAI);
+  const [key, setKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function onConnect() {
+    const t = key.trim();
+    if (!t) return;
+    setBusy(true);
+    setError('');
+    try {
+      const ok = await verifyAIKey(t);
+      if (ok) {
+        setAIKey(t);
+        setKey('');
+      } else {
+        setError('Clave de OpenAI inválida.');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'No se pudo verificar la clave.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const keyUrl = 'https://platform.openai.com/api-keys';
+
+  return (
+    <div>
+      <SectionTitle>Asistente de nutrición (IA)</SectionTitle>
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles size={18} className={ai.hasKey ? 'text-food' : 'text-faint'} />
+          <h3 className="font-bold">{ai.hasKey ? 'Conectado a OpenAI' : 'Registra comidas por voz'}</h3>
+        </div>
+
+        {!ai.hasKey ? (
+          <>
+            <p className="text-[14px] text-muted leading-relaxed mb-4">
+              Con una clave de OpenAI puedes dictar lo que comes y la app calcula las calorías y
+              macros. La clave se guarda <b className="text-fg">solo en este dispositivo</b> (no se
+              sube a la nube ni a la copia). El coste por comida es de céntimos.
+            </p>
+            <input
+              type="password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Pega aquí tu clave (sk-…)"
+              className="w-full h-11 rounded-xl bg-ink-2 border border-line px-3 font-mono text-sm outline-none focus:border-food/60 mb-3"
+            />
+            <button
+              onClick={onConnect}
+              disabled={busy || !key.trim()}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-food text-ink py-3 font-bold active:scale-95 disabled:opacity-50"
+            >
+              <KeyRound size={18} /> {busy ? 'Verificando…' : 'Guardar clave'}
+            </button>
+            {error && <p className="text-sm font-semibold text-danger mt-3">⚠ {error}</p>}
+            <details className="mt-4 text-[13px] text-muted">
+              <summary className="cursor-pointer font-semibold text-fg">¿Cómo consigo la clave?</summary>
+              <ol className="list-decimal pl-5 mt-2 space-y-1 leading-relaxed">
+                <li>
+                  Abre{' '}
+                  <a className="text-food underline" href={keyUrl} target="_blank" rel="noreferrer">
+                    platform.openai.com/api-keys
+                  </a>{' '}
+                  e inicia sesión.
+                </li>
+                <li>Pulsa <b className="text-fg">Create new secret key</b> y cópiala.</li>
+                <li>Pégala arriba. Conviene ponerle un límite de gasto en tu cuenta.</li>
+              </ol>
+              <p className="mt-2">
+                El texto de tus comidas (y el audio) se envía a OpenAI solo para calcular los macros.
+              </p>
+            </details>
+          </>
+        ) : (
+          <>
+            <p className="text-[14px] text-muted leading-relaxed mb-4">
+              Listo. Ve a <b className="text-fg">Nutrición → Mi día</b> y registra una comida por voz.
+              La clave vive solo aquí; puedes quitarla cuando quieras.
+            </p>
+            <button
+              onClick={() => {
+                if (confirm('¿Quitar la clave de OpenAI de este dispositivo?')) clearAIKey();
+              }}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-card-2 border border-line text-fg py-3 font-bold active:scale-95"
+            >
+              <LogOut size={18} /> Quitar clave
+            </button>
+          </>
+        )}
+      </Card>
+    </div>
+  );
 }
 
 function CloudCard() {

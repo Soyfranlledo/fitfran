@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
   DayMenu,
+  FoodLogEntry,
   HealthEntry,
   MacroTargets,
   Meal,
@@ -11,6 +12,8 @@ import type {
   WorkoutSession,
 } from '../types';
 import { DEFAULT_MENU } from '../data/weeklyMenu';
+import { PLANS } from '../data/workoutPlans';
+import { EXERCISE_CATALOG } from '../data/exerciseCatalog';
 
 /* ============================ Ajustes / Perfil ============================ */
 interface SettingsState {
@@ -69,6 +72,10 @@ interface WorkoutState {
   toggleExercise: (key: string, exId: string, sets: number) => void;
   addExercise: (key: string, exercise: Exercise) => void;
   removeExercise: (key: string, exId: string) => void;
+  /** Añade una serie extra (vacía) a un ejercicio de la sesión. */
+  addSet: (key: string, exId: string) => void;
+  /** Quita la última serie de un ejercicio (deja al menos una). */
+  removeSet: (key: string, exId: string) => void;
   completeSession: (key: string, when: string) => void;
   resetSession: (key: string) => void;
 }
@@ -189,6 +196,37 @@ export const useWorkout = create<WorkoutState>()(
             },
           };
         }),
+      addSet: (key, exId) =>
+        set((s) => {
+          const sess = s.sessions[key];
+          if (!sess) return s;
+          const log = sess.logs[exId];
+          if (!log) return s;
+          const sets = [...log.sets, { weight: 0, reps: 0, done: false }];
+          return {
+            sessions: {
+              ...s.sessions,
+              // Una serie nueva está sin hacer, así que el ejercicio deja de
+              // estar "completado" hasta que la marques.
+              [key]: { ...sess, logs: { ...sess.logs, [exId]: { ...log, sets, done: false } } },
+            },
+          };
+        }),
+      removeSet: (key, exId) =>
+        set((s) => {
+          const sess = s.sessions[key];
+          if (!sess) return s;
+          const log = sess.logs[exId];
+          if (!log || log.sets.length <= 1) return s;
+          const sets = log.sets.slice(0, -1);
+          const done = sets.length > 0 && sets.every((st) => st.done);
+          return {
+            sessions: {
+              ...s.sessions,
+              [key]: { ...sess, logs: { ...sess.logs, [exId]: { ...log, sets, done } } },
+            },
+          };
+        }),
       completeSession: (key, when) =>
         set((s) => {
           const sess = s.sessions[key];
@@ -207,6 +245,24 @@ export const useWorkout = create<WorkoutState>()(
     { name: 'fitfran-workouts' }
   )
 );
+
+/**
+ * Resuelve un ejercicio por su id mirando, en orden: los planes, el catálogo y
+ * la biblioteca personal del usuario. Lo usan el detalle del ejercicio y la
+ * sesión para mostrar nombre, técnica e historial de cualquier ejercicio,
+ * venga de donde venga.
+ */
+export function findExerciseById(id: string): Exercise | null {
+  for (const p of Object.values(PLANS)) {
+    for (const d of p.days) {
+      const e = [...d.exercises, ...(d.alternatives ?? [])].find((x) => x.id === id);
+      if (e) return e;
+    }
+  }
+  const cat = EXERCISE_CATALOG.find((e) => e.id === id);
+  if (cat) return cat;
+  return useLibrary.getState().exercises[id] ?? null;
+}
 
 /** Último peso registrado para un ejercicio (escanea historial). */
 export function lastWeightFor(
@@ -300,6 +356,93 @@ export const useMenu = create<MenuState>()(
   )
 );
 
+/* ============================ Biblioteca de ejercicios ============================ */
+/** Ejercicios que el usuario crea a mano (los del catálogo no se guardan aquí). */
+interface LibraryState {
+  exercises: Record<string, Exercise>;
+  addExercise: (e: Exercise) => void;
+  removeExercise: (id: string) => void;
+}
+
+export const useLibrary = create<LibraryState>()(
+  persist(
+    (set) => ({
+      exercises: {},
+      addExercise: (e) =>
+        set((s) => ({ exercises: { ...s.exercises, [e.id]: e } })),
+      removeExercise: (id) =>
+        set((s) => {
+          const next = { ...s.exercises };
+          delete next[id];
+          return { exercises: next };
+        }),
+    }),
+    { name: 'fitfran-library' }
+  )
+);
+
+/** Genera un id estable para un ejercicio creado por el usuario. */
+export function newCustomExerciseId(): string {
+  const rnd = Math.random().toString(36).slice(2, 8);
+  return `user-${Date.now().toString(36)}-${rnd}`;
+}
+
+/* ============================ Diario de comidas ============================ */
+/** Lo que el usuario come de verdad cada día (aparte del menú/plan). */
+interface FoodLogState {
+  /** date (YYYY-MM-DD) -> entradas de ese día */
+  entries: Record<string, FoodLogEntry[]>;
+  addEntry: (e: FoodLogEntry) => void;
+  updateEntry: (date: string, id: string, patch: Partial<FoodLogEntry>) => void;
+  removeEntry: (date: string, id: string) => void;
+}
+
+export const useFoodLog = create<FoodLogState>()(
+  persist(
+    (set) => ({
+      entries: {},
+      addEntry: (e) =>
+        set((s) => ({
+          entries: { ...s.entries, [e.date]: [...(s.entries[e.date] ?? []), e] },
+        })),
+      updateEntry: (date, id, patch) =>
+        set((s) => ({
+          entries: {
+            ...s.entries,
+            [date]: (s.entries[date] ?? []).map((x) => (x.id === id ? { ...x, ...patch } : x)),
+          },
+        })),
+      removeEntry: (date, id) =>
+        set((s) => {
+          const list = (s.entries[date] ?? []).filter((x) => x.id !== id);
+          const entries = { ...s.entries };
+          if (list.length) entries[date] = list;
+          else delete entries[date];
+          return { entries };
+        }),
+    }),
+    { name: 'fitfran-foodlog' }
+  )
+);
+
+export function newFoodEntryId(): string {
+  const rnd = Math.random().toString(36).slice(2, 8);
+  return `f-${Date.now().toString(36)}-${rnd}`;
+}
+
+/** Suma kcal y macros de una lista de entradas del diario. */
+export function foodLogTotals(list: FoodLogEntry[] = []) {
+  return list.reduce(
+    (acc, e) => ({
+      kcal: acc.kcal + (e.kcal || 0),
+      protein: acc.protein + (e.protein || 0),
+      carbs: acc.carbs + (e.carbs || 0),
+      fat: acc.fat + (e.fat || 0),
+    }),
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+}
+
 /* ============================ Personalización del plan ============================ */
 interface PlanState {
   /** dayId -> día de la semana asignado por el usuario (1..7) */
@@ -335,6 +478,8 @@ export const BACKUP_KEYS = [
   'fitfran-health',
   'fitfran-menu',
   'fitfran-plan',
+  'fitfran-foodlog',
+  'fitfran-library',
 ];
 
 export function exportData(): string {

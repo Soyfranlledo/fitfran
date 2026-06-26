@@ -1,18 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Check, Info, History, Timer, Trophy, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Check, Info, History, Timer, Trophy, RotateCcw, Plus, Minus, Search, Dumbbell, X } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Pill } from '../components/ui';
+import { Sheet } from '../components/Sheet';
 import {
   useSettings,
   useWorkout,
+  useLibrary,
   sessionKey,
   lastWeightFor,
+  findExerciseById,
+  newCustomExerciseId,
 } from '../lib/store';
 import { PLANS } from '../data/workoutPlans';
-import { muscleColor, sessionProgress, isSessionComplete, estimatedMinutesForExercises } from '../lib/workout';
+import { EXERCISE_CATALOG } from '../data/exerciseCatalog';
+import {
+  muscleColor,
+  sessionProgress,
+  isSessionComplete,
+  estimatedMinutesForExercises,
+  loadOf,
+  LOAD_LABEL,
+  weightColumnLabel,
+  loadHint,
+} from '../lib/workout';
 import { isoDate, shortDate } from '../lib/date';
-import type { Exercise } from '../types';
+import type { Exercise, LoadType, MuscleGroup } from '../types';
+
+const MUSCLE_GROUPS: MuscleGroup[] = [
+  'Pecho', 'Espalda', 'Pierna', 'Glúteo', 'Hombro', 'Bíceps', 'Tríceps', 'Core', 'Cardio',
+];
+const LOAD_TYPES: LoadType[] = ['barra', 'mancuerna', 'polea', 'maquina', 'corporal'];
 
 function findDay(dayId: string) {
   for (const p of Object.values(PLANS)) {
@@ -37,6 +56,7 @@ export function WorkoutSessionPage() {
 
   const today = isoDate();
   const key = found ? sessionKey(today, found.day.id) : '';
+  const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => {
     if (found) ensureSession(today, found.day, daysPerWeek);
@@ -57,12 +77,20 @@ export function WorkoutSessionPage() {
 
   const { day } = found;
   const allExercises = [...day.exercises, ...(day.alternatives ?? [])];
-  const selectedExercises = allExercises.filter((ex) => session?.logs[ex.id]);
+  const baseById = new Map(allExercises.map((e) => [e.id, e]));
+  // Activos = cualquier ejercicio con log en la sesión (plan, alternativa,
+  // catálogo o creado a mano). Se resuelve por id para mostrar nombre/carga.
+  const selectedExercises: Exercise[] = session
+    ? (Object.keys(session.logs)
+        .map((id) => baseById.get(id) ?? findExerciseById(id))
+        .filter(Boolean) as Exercise[])
+    : [];
   const availableExercises = allExercises.filter((ex) => !session?.logs[ex.id]);
   const estimated = estimatedMinutesForExercises(
     selectedExercises.length ? selectedExercises : day.exercises
   );
   const done = isSessionComplete(session);
+  const activeIds = new Set(session ? Object.keys(session.logs) : []);
 
   return (
     <div className="animate-fade">
@@ -126,14 +154,22 @@ export function WorkoutSessionPage() {
           ))}
         </div>
 
+        {/* Añadir de la biblioteca */}
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full mt-4 rounded-2xl border border-dashed border-line-strong bg-card/40 py-3.5 flex items-center justify-center gap-2 font-bold text-accent active:scale-[0.99]"
+        >
+          <Search size={18} /> Añadir ejercicio
+        </button>
+
         {availableExercises.length > 0 && (
           <section className="mt-6">
             <div className="flex items-end justify-between gap-3 px-1 mb-3">
               <div>
                 <h2 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">
-                  Opciones disponibles
+                  Opciones del día
                 </h2>
-                <p className="text-[12px] text-faint mt-1">Añade una si una máquina está ocupada.</p>
+                <p className="text-[12px] text-faint mt-1">Alternativas y ejercicios que has quitado.</p>
               </div>
               <Pill>{availableExercises.length} opciones</Pill>
             </div>
@@ -169,6 +205,13 @@ export function WorkoutSessionPage() {
         <div className="h-4" />
       </div>
 
+      <AddExerciseSheet
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        activeIds={activeIds}
+        onAdd={(ex) => addExercise(key, ex)}
+      />
+
       {celebrate && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 animate-fade p-8" onClick={() => nav('/')}>
           <div className="text-center animate-pop">
@@ -198,14 +241,19 @@ function ExerciseCard({
   const setField = useWorkout((s) => s.setField);
   const toggleSet = useWorkout((s) => s.toggleSet);
   const toggleExercise = useWorkout((s) => s.toggleExercise);
+  const addSet = useWorkout((s) => s.addSet);
+  const removeSet = useWorkout((s) => s.removeSet);
 
   const log = sessions[sessionK]?.logs[ex.id];
   const last = lastWeightFor(sessions, ex.id);
   const [open, setOpen] = useState(false);
   const color = muscleColor[ex.muscle] ?? '#b6f23e';
+  const load = loadOf(ex);
+  const hint = loadHint(load);
 
   if (!log) return null;
   const exDone = log.done;
+  const nSets = log.sets.length;
 
   return (
     <div className={`rounded-3xl border bg-card overflow-hidden transition-colors ${exDone ? 'border-accent/40' : 'border-line'}`}>
@@ -224,10 +272,13 @@ function ExerciseCard({
           <div className="flex items-center gap-2 mb-0.5">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
             <span className="text-[11px] font-semibold text-faint uppercase tracking-wide">{ex.muscle}</span>
+            <span className="text-[10px] font-semibold text-faint uppercase tracking-wide rounded-full bg-ink-2 px-2 py-0.5">
+              {LOAD_LABEL[load]}
+            </span>
           </div>
           <h3 className={`font-bold leading-tight ${exDone ? 'line-through text-muted' : ''}`}>{ex.name}</h3>
           <p className="text-[13px] text-muted mt-0.5">
-            {ex.sets} × {ex.reps} · descanso {ex.rest}
+            {nSets} × {ex.reps} · descanso {ex.rest}
           </p>
         </button>
 
@@ -273,7 +324,7 @@ function ExerciseCard({
         <div className="px-4 pb-4 space-y-2 animate-fade">
           <div className="grid grid-cols-[2.2rem_1fr_1fr_2.6rem] gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-faint">
             <span>Serie</span>
-            <span>Peso (kg)</span>
+            <span>{weightColumnLabel(load)}</span>
             <span>Reps</span>
             <span className="text-center">OK</span>
           </div>
@@ -308,6 +359,27 @@ function ExerciseCard({
               </button>
             </div>
           ))}
+
+          {hint && <p className="text-[12px] text-faint px-1 pt-0.5">{hint}</p>}
+
+          {/* Añadir / quitar serie */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => addSet(sessionK, ex.id)}
+              className="flex-1 h-10 rounded-xl bg-ink-2 border border-line text-[13px] font-bold text-accent flex items-center justify-center gap-1.5 active:scale-[0.98]"
+            >
+              <Plus size={16} /> Añadir serie
+            </button>
+            {nSets > 1 && (
+              <button
+                onClick={() => removeSet(sessionK, ex.id)}
+                className="h-10 w-12 rounded-xl bg-ink-2 border border-line text-faint flex items-center justify-center active:scale-95 active:text-danger"
+                aria-label="Quitar última serie"
+              >
+                <Minus size={16} />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -352,6 +424,249 @@ function AvailableExerciseCard({
       >
         <Info size={17} />
       </Link>
+    </div>
+  );
+}
+
+/* ---------------------- Buscar / crear ejercicio ---------------------- */
+function AddExerciseSheet({
+  open,
+  onClose,
+  activeIds,
+  onAdd,
+}: {
+  open: boolean;
+  onClose: () => void;
+  activeIds: Set<string>;
+  onAdd: (ex: Exercise) => void;
+}) {
+  const [q, setQ] = useState('');
+  const [muscle, setMuscle] = useState<MuscleGroup | 'Todos'>('Todos');
+  const [creating, setCreating] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const customExercises = useLibrary((s) => s.exercises);
+  const addToLibrary = useLibrary((s) => s.addExercise);
+
+  const pool = useMemo(
+    () => [...Object.values(customExercises), ...EXERCISE_CATALOG],
+    [customExercises]
+  );
+
+  const results = useMemo(() => {
+    const norm = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const nq = norm(q.trim());
+    return pool
+      .filter((e) => (muscle === 'Todos' ? true : e.muscle === muscle))
+      .filter((e) => (nq ? norm(e.name).includes(nq) : true))
+      .slice(0, 60);
+  }, [pool, q, muscle]);
+
+  function add(ex: Exercise) {
+    onAdd(ex);
+    setJustAdded(ex.id);
+    setTimeout(() => setJustAdded((id) => (id === ex.id ? null : id)), 1200);
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={creating ? 'Crear ejercicio' : 'Añadir ejercicio'}>
+      {creating ? (
+        <CreateExerciseForm
+          onCancel={() => setCreating(false)}
+          onCreate={(ex) => {
+            addToLibrary(ex);
+            onAdd(ex);
+            setCreating(false);
+          }}
+        />
+      ) : (
+        <div className="space-y-3">
+          <div className="relative">
+            <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar ejercicio…"
+              className="w-full h-11 rounded-xl bg-ink-2 border border-line pl-9 pr-3 outline-none focus:border-accent/60"
+            />
+          </div>
+
+          <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 no-scrollbar">
+            {(['Todos', ...MUSCLE_GROUPS] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMuscle(m as MuscleGroup | 'Todos')}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                  muscle === m ? 'bg-accent text-ink' : 'bg-ink-2 border border-line text-muted'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-2 max-h-[46vh] overflow-y-auto -mx-1 px-1">
+            {results.map((ex) => {
+              const active = activeIds.has(ex.id);
+              const added = justAdded === ex.id;
+              const color = muscleColor[ex.muscle] ?? '#b6f23e';
+              return (
+                <div key={ex.id} className="rounded-2xl border border-line bg-card/70 p-3 flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                      <span className="text-[11px] font-semibold text-faint uppercase tracking-wide">
+                        {ex.muscle} · {LOAD_LABEL[loadOf(ex)]}
+                      </span>
+                    </div>
+                    <h3 className="font-bold leading-tight truncate">{ex.name}</h3>
+                    <p className="text-[12px] text-muted mt-0.5">{ex.sets} × {ex.reps}</p>
+                  </div>
+                  <button
+                    onClick={() => add(ex)}
+                    disabled={active}
+                    className={`grid place-items-center h-10 w-10 rounded-xl shrink-0 active:scale-95 ${
+                      active || added ? 'bg-accent/20 text-accent' : 'bg-accent text-ink'
+                    }`}
+                    aria-label={`Añadir ${ex.name}`}
+                  >
+                    {active || added ? <Check size={20} strokeWidth={3} /> : <Plus size={20} strokeWidth={2.75} />}
+                  </button>
+                </div>
+              );
+            })}
+            {results.length === 0 && (
+              <p className="text-center text-sm text-faint py-6">
+                Sin resultados. Puedes crearlo a mano.
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={() => setCreating(true)}
+            className="w-full rounded-2xl bg-card-2 border border-line py-3 font-bold flex items-center justify-center gap-2 active:scale-[0.99]"
+          >
+            <Dumbbell size={18} className="text-accent" /> Crear un ejercicio nuevo
+          </button>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+function CreateExerciseForm({
+  onCreate,
+  onCancel,
+}: {
+  onCreate: (ex: Exercise) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [muscle, setMuscle] = useState<MuscleGroup>('Pecho');
+  const [load, setLoad] = useState<LoadType>('barra');
+  const [sets, setSets] = useState(3);
+  const [reps, setReps] = useState('8-12');
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-[12px] font-semibold text-muted">Nombre</label>
+        <input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="p. ej. Press inclinado en máquina"
+          className="mt-1 w-full h-12 rounded-xl bg-ink-2 border border-line px-3 font-semibold outline-none focus:border-accent/60"
+        />
+      </div>
+
+      <div>
+        <label className="text-[12px] font-semibold text-muted">Músculo</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {MUSCLE_GROUPS.map((m) => (
+            <button
+              key={m}
+              onClick={() => setMuscle(m)}
+              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                muscle === m ? 'bg-accent text-ink' : 'bg-ink-2 border border-line text-muted'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-[12px] font-semibold text-muted">Tipo de carga</label>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {LOAD_TYPES.map((l) => (
+            <button
+              key={l}
+              onClick={() => setLoad(l)}
+              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                load === l ? 'bg-accent text-ink' : 'bg-ink-2 border border-line text-muted'
+              }`}
+            >
+              {LOAD_LABEL[l]}
+            </button>
+          ))}
+        </div>
+        {loadHint(load) && <p className="text-[12px] text-faint mt-1.5">{loadHint(load)}</p>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-[12px] font-semibold text-muted">Series</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={sets || ''}
+            onChange={(e) => setSets(Math.max(1, parseInt(e.target.value) || 1))}
+            className="mt-1 w-full h-12 rounded-xl bg-ink-2 border border-line text-center font-bold outline-none focus:border-accent/60"
+          />
+        </div>
+        <div>
+          <label className="text-[12px] font-semibold text-muted">Reps</label>
+          <input
+            value={reps}
+            onChange={(e) => setReps(e.target.value)}
+            placeholder="8-12"
+            className="mt-1 w-full h-12 rounded-xl bg-ink-2 border border-line text-center font-bold outline-none focus:border-accent/60"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onCancel}
+          className="h-12 px-5 rounded-2xl bg-card-2 border border-line font-bold flex items-center gap-2 active:scale-95"
+        >
+          <X size={18} /> Cancelar
+        </button>
+        <button
+          onClick={() => {
+            const n = name.trim();
+            if (!n) return;
+            onCreate({
+              id: newCustomExerciseId(),
+              name: n,
+              muscle,
+              load,
+              sets: Math.max(1, sets),
+              reps: reps.trim() || '8-12',
+              rest: '90s',
+              how: '',
+              cues: [],
+            });
+          }}
+          disabled={!name.trim()}
+          className="flex-1 h-12 rounded-2xl bg-accent text-ink font-bold flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+        >
+          <Plus size={18} /> Crear y añadir
+        </button>
+      </div>
     </div>
   );
 }

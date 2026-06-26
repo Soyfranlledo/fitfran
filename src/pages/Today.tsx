@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui';
 import { ProgressRing } from '../components/ProgressRing';
-import { useHealth, useMenu, useSettings, useWorkout, usePlan, sessionKey } from '../lib/store';
+import { useHealth, useMenu, useSettings, useWorkout, usePlan, useFoodLog, foodLogTotals, sessionKey } from '../lib/store';
 import { getPlan } from '../data/workoutPlans';
 import { dayForWeekday, sessionProgress, isSessionComplete, effectivePlan } from '../lib/workout';
 import { menuTotals } from '../data/weeklyMenu';
@@ -33,8 +33,16 @@ export function Today() {
   const prog = sessionProgress(session);
   const complete = isSessionComplete(session);
 
+  // Nutrición de hoy: si has registrado comidas reales, manda el diario; si no,
+  // se muestra el plan del menú como referencia.
+  const loggedToday = useFoodLog((s) => s.entries)[today];
+  const hasLog = !!loggedToday?.length;
   const todayMenu = menu.find((m) => m.weekday === wd);
-  const totals = todayMenu ? menuTotals(todayMenu) : { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  const totals = hasLog
+    ? foodLogTotals(loggedToday)
+    : todayMenu
+      ? menuTotals(todayMenu)
+      : { kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
   const latest = Object.values(entries).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
 
@@ -113,7 +121,7 @@ export function Today() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-faint">
-                  Nutrición de hoy
+                  Nutrición de hoy{hasLog ? ' · comido' : ' · menú'}
                 </p>
                 <h3 className="text-2xl font-bold mt-1">
                   {totals.kcal}

@@ -1,6 +1,6 @@
 # Estado actual del proyecto
 
-Ultima revision: 15 de junio de 2026.
+Ultima revision: 26 de junio de 2026.
 
 ## Resumen
 
@@ -13,6 +13,9 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 - Rama de produccion: `main`
 - Ultimo cambio funcional desplegado: `1bf9b84` (arreglo de finalizar entreno).
 - Sincronizacion en la nube desplegada en `0f2158d`.
+- Bloque del 26-jun (series extra, biblioteca de ejercicios, progreso 1RM,
+  tipo de carga y nutricion por voz): **en local, pendiente de commit y
+  despliegue**.
 
 ## Funcionalidad disponible
 
@@ -29,16 +32,26 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 - Planes de 3, 4 y 5 dias.
 - Reasignacion de sesiones a otro dia de la semana.
 - Registro de peso y repeticiones por serie.
+- Series extra: añadir o quitar series de un ejercicio durante la sesion.
 - Marcado de series y ejercicios completados.
-- Historial de cargas por ejercicio.
+- Tipo de carga por ejercicio (barra, mancuerna, polea, maquina, corporal): la
+  columna de peso aclara si se anota el peso de una mancuerna o el total.
+- Progreso por ejercicio: 1RM estimado (Epley), volumen y tabla por fecha/semana.
 - Historial de sesiones, volumen y series realizadas.
 - Estimacion de duracion.
 - Dos alternativas disponibles por sesion.
+- Biblioteca de ejercicios: buscador sobre un catalogo en espanol y creacion de
+  ejercicios propios; cualquiera se añade a la sesion con registro e historial.
 - Seleccion especifica para cada sesion: un ejercicio se puede quitar y una
   alternativa se puede añadir sin cambiar la rutina base.
 
 ### Nutricion
 
+- Dos pestañas: "Mi dia" (diario real) y "Menu" (plan).
+- Diario de comidas: registro de lo que comes de verdad, sumado y comparado con
+  tus objetivos.
+- Registro por voz: grabas lo que has comido y la IA lo desglosa en alimentos
+  con kcal y macros, editable antes de guardar; tambien entrada manual.
 - Menu semanal con vista diaria y semanal.
 - Edicion de comidas, cantidades y macros.
 - Objetivos diarios editables.
@@ -58,13 +71,35 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 - Perfil y numero de dias de entrenamiento editables.
 - Sincronizacion en la nube con un Gist privado de GitHub: los mismos datos en
   todos los dispositivos y navegadores, conectando con un token (permiso solo
-  `gist`) una vez por dispositivo.
+  `gist`) una vez por dispositivo. Incluye el diario de comidas y la biblioteca.
+- Asistente de nutricion (IA): clave de OpenAI guardada solo en el dispositivo
+  (`fitfran-ai`), fuera de la copia y de la sincronizacion.
 - Exportacion e importacion de una copia JSON.
 - Restauracion del menu por defecto.
 - Borrado completo bajo confirmacion.
 - Instalacion como PWA y uso offline tras cargar la aplicacion.
 
 ## Ultimo trabajo realizado
+
+### Bloque del 26 de junio (5 mejoras)
+
+Cinco funciones a peticion del usuario, todas validadas con `npm run build`:
+
+1. **Series extra** en la sesion (`addSet`/`removeSet` en el store).
+2. **Biblioteca de ejercicios**: catalogo en espanol
+   (`src/data/exerciseCatalog.ts`, IDs `cat-...`), ejercicios propios
+   (`useLibrary`, IDs `user-...`) y resolver `findExerciseById`. Buscador y
+   creacion en la pantalla de sesion.
+3. **Progreso 1RM**: `epley1RM` y `exerciseProgress` en `workout.ts`; la ficha
+   del ejercicio muestra fuerza estimada, volumen y tabla por fecha/semana.
+4. **Tipo de carga**: campo opcional `Exercise.load`; `loadOf` infiere el de los
+   planes base por el nombre. La columna de peso aclara mancuerna vs total.
+5. **Nutricion por voz**: `src/lib/ai.ts` (clave OpenAI en el dispositivo,
+   transcripcion + analisis con `gpt-4o-mini`), diario `useFoodLog` y pantalla
+   "Mi dia". CORS de OpenAI verificado para los tres endpoints usados.
+
+Detalle y alternativas en `docs/decisions/0006-nutrition-ai-and-exercise-library.md`.
+Estado: en local, pendiente de commit y despliegue.
 
 ### Sincronizacion en la nube
 
@@ -159,10 +194,21 @@ Tras un despliegue, el icono instalado puede abrir temporalmente el service
 worker anterior. Normalmente se resuelve cerrando la app y abriendo una vez la
 URL publica en Safari.
 
+### Nutricion por voz (IA)
+
+La voz y el calculo automatico dependen de una clave de OpenAI y de conexion.
+La grabacion (`MediaRecorder`/microfono) exige contexto seguro (HTTPS): funciona
+en produccion y en la app instalada, no en `http://` de red local. Sin clave, el
+diario sigue admitiendo entrada manual. La clave vive en `localStorage`
+(`fitfran-ai`) del dispositivo: conviene fijar un limite de gasto en OpenAI. El
+texto/audio de la comida se envia a OpenAI solo para el calculo.
+
 ### Cobertura de pruebas
 
 No hay tests unitarios, de componentes ni end-to-end. Los cambios deben
-validarse con build y una comprobacion manual del flujo afectado.
+validarse con build y una comprobacion manual del flujo afectado. Pendiente:
+probar en el iPhone el flujo de voz completo (permiso de microfono, grabacion,
+transcripcion y guardado) con una clave real.
 
 ## Siguientes mejoras candidatas
 
