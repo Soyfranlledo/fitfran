@@ -36,6 +36,8 @@ tecnicas de fondo viven en `docs/decisions/`.
 - El diario de comidas y tu biblioteca de ejercicios se incluyen en la copia de
   seguridad y en la sincronizacion en la nube, sin perder informacion al fusionar.
 
+Desplegado en `bf7cc2c` y verificado en produccion (voz probada en iPhone).
+
 ## 15 de junio de 2026
 
 ### Arreglo: finalizar entreno con ejercicios intercambiados

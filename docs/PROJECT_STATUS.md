@@ -11,11 +11,11 @@ planes y toda la informacion introducida por el usuario viven en el navegador.
 - Produccion: <https://soyfranlledo.github.io/fitfran/>
 - Repositorio: <https://github.com/Soyfranlledo/fitfran>
 - Rama de produccion: `main`
-- Ultimo cambio funcional desplegado: `1bf9b84` (arreglo de finalizar entreno).
-- Sincronizacion en la nube desplegada en `0f2158d`.
-- Bloque del 26-jun (series extra, biblioteca de ejercicios, progreso 1RM,
-  tipo de carga y nutricion por voz): **en local, pendiente de commit y
-  despliegue**.
+- Ultimo cambio funcional desplegado: `bf7cc2c` (bloque del 26 de junio: series
+  extra, biblioteca de ejercicios, progreso 1RM, tipo de carga y nutricion por
+  voz). **Desplegado y verificado en produccion.**
+- Hitos previos: sincronizacion en la nube (`0f2158d`), arreglo de finalizar
+  entreno (`1bf9b84`).
 
 ## Funcionalidad disponible
 
@@ -99,7 +99,9 @@ Cinco funciones a peticion del usuario, todas validadas con `npm run build`:
    "Mi dia". CORS de OpenAI verificado para los tres endpoints usados.
 
 Detalle y alternativas en `docs/decisions/0006-nutrition-ai-and-exercise-library.md`.
-Estado: en local, pendiente de commit y despliegue.
+Estado: desplegado en `bf7cc2c` (Deploy to GitHub Pages: success el 26-jun) y
+verificado en produccion; el flujo de voz se probo en el iPhone con una clave
+real y funciona.
 
 ### Sincronizacion en la nube
 
@@ -163,7 +165,8 @@ Caso validado en la sesion de pierna:
 - `npm run build`: correcto.
 - TypeScript: validado como parte del build.
 - Build PWA de produccion: correcto.
-- Despliegue GitHub Pages del cambio funcional: correcto.
+- Despliegue GitHub Pages del bloque del 26-jun (`bf7cc2c`): success y verificado
+  en la URL publica (cadenas nuevas presentes en el bundle servido).
 - No existe una suite automatizada de tests.
 
 ## Riesgos y deuda conocida
@@ -206,9 +209,9 @@ texto/audio de la comida se envia a OpenAI solo para el calculo.
 ### Cobertura de pruebas
 
 No hay tests unitarios, de componentes ni end-to-end. Los cambios deben
-validarse con build y una comprobacion manual del flujo afectado. Pendiente:
-probar en el iPhone el flujo de voz completo (permiso de microfono, grabacion,
-transcripcion y guardado) con una clave real.
+validarse con build y una comprobacion manual del flujo afectado. El flujo de
+voz (permiso de microfono, grabacion, transcripcion y guardado) se probo en el
+iPhone con una clave real el 26-jun y funciona.
 
 ## Siguientes mejoras candidatas
 
